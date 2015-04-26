@@ -8,6 +8,20 @@ solution "nod_tests"
 	configurations       { "debug", "release" }
 	includedirs          { ".", "../include" }
 
+	-- Add some flags for gmake builds
+	if _ACTION == "gmake" then
+		buildoptions     { "-Wall" }
+		buildoptions     { "-std=c++11" }
+	end
+
+	-- Since premake doesn't implement the clean command
+	-- on all platforms, we define our own
+	if action == "clean" then
+		os.rmdir("build")
+		os.rmdir("bin")
+		os.rmdir("lib")
+	end
+
 	-- Debug configuration
 	configuration { "debug" }
 		targetdir        ( "bin/" .. action .. "/debug" )
@@ -22,19 +36,6 @@ solution "nod_tests"
 		defines          { "NDEBUG" }
 		flags            { "Unicode" }
 		libdirs          { "lib/" .. action .. "/release" }
-
-	-- Add some flags for gmake builds
-	if action == "gmake" then
-		buildoptions "-std=c++14"
-	end
-
-	-- Since premake doesn't implement the clean command
-	-- on all platforms, we define our own
-	if action == "clean" then
-		os.rmdir("build")
-		os.rmdir("bin")
-		os.rmdir("lib")
-	end
 
 -- The test project definition
 project "nod_tests"
