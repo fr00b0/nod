@@ -48,7 +48,7 @@ SCENARIO( "Signals can be invoked and will trigger connected slots" ) {
 
 SCENARIO( "Signals will disconnect all slots when destroyed" ) {
 	GIVEN( "A signal" ) {
-		auto signal_ptr = std::make_unique<nod::signal<void(void)>>();
+		auto signal_ptr = std::unique_ptr<nod::signal<void(void)>>( new nod::signal<void(void)>() );
 		WHEN( "Some slots gets connected to the signal" ) {
 			auto connection1 = signal_ptr->connect( []() {} );
 			auto connection2 = signal_ptr->connect( []() {} );
