@@ -66,7 +66,7 @@ namespace nod {
 
 			/// Disconnect the slot from the connection.
 			///
-			/// If the connection represents a slot thatis connected to a signal object, calling
+			/// If the connection represents a slot that is connected to a signal object, calling
 			/// this method will disconnect the slot from that object. The result of this operation
 			/// is that the slot will stop recieving calls when the signal is invoked.
 			void disconnect();
@@ -93,6 +93,52 @@ namespace nod {
 			std::size_t _index;
 	};
 
+	/// Scoped connection class.
+	/// 
+	/// This type of connection is automatically disconnected when
+	/// the connection object is destructed.
+	///
+	class scoped_connection
+	{
+		public:
+			/// Scoped connections are not default constructible
+			scoped_connection() = delete;
+			/// Scoped connections are not copy constructible
+			scoped_connection( scoped_connection const& ) = delete;
+			/// Scoped connections are not copy assingable
+			scoped_connection& operator=( scoped_connection const& ) = delete;
+
+			/// Construct a scoped connection from a connection object
+			/// @param connection   The connection object to manage
+			scoped_connection( connection&& c ) :
+				_connection( std::forward<connection>(c) )
+			{}
+
+			/// destructor
+			~scoped_connection() {
+				disconnect();
+			}
+
+			///
+			/// @returns `true` if the connection is connected to a signal object,
+			///          and `false` otherwise.
+			bool connected() const {
+				return _connection.connected();
+			}
+
+			/// Disconnect the slot from the connection.
+			///
+			/// If the connection represents a slot that is connected to a signal object, calling
+			/// this method will disconnect the slot from that object. The result of this operation
+			/// is that the slot will stop recieving calls when the signal is invoked.
+			void disconnect() {
+				_connection.disconnect();
+			}
+
+		private:
+			/// Underlying connection object
+			connection _connection;
+	};
 
 	/// Signal template specialization.
 	///

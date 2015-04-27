@@ -69,3 +69,23 @@ SCENARIO( "Signals will disconnect all slots when destroyed" ) {
 		}
 	}
 }
+
+SCENARIO( "Scoped connection will disconnect when destroyed" ) {
+	GIVEN( "A signal" ) {
+		std::ostringstream ss;
+		nod::signal<void(void)> signal;
+		WHEN( "A slot get's connected and managed by a scoped connection" ) {
+			auto connection = std::make_unique<nod::scoped_connection>(signal.connect( [&](){ ss << "singaled!"; } ));
+			THEN( "the connection is considered connected" ) {
+				REQUIRE( connection->connected() == true );
+			}
+			AND_WHEN( "the scoped_connection is destroyed ") {
+				connection.reset();
+				THEN( "it is disconnected so no signaling is done" ) {
+					signal();
+					REQUIRE( ss.str().empty() );
+				}
+			}
+		}
+	}
+}
