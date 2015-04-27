@@ -37,3 +37,6 @@
 *.sln
 *.vcxproj
 *.vcxproj.filters
+*.sdf
+*.opensdf
+*.log
