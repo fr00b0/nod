@@ -201,11 +201,12 @@ namespace nod {
 			///
 			///
 			///
-			void operator()( A&&... args ) const {
+			template <class...Args>
+			void operator()( Args&&... args ) const {
 				std::lock_guard<std::mutex> lock{ _mutex };
 				for( auto const& slot : _slots ) {
 					if( slot ) {
-						slot( std::forward<A...>(args)... );
+						slot( args... );
 					}
 				}
 			}
