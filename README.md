@@ -61,6 +61,50 @@ nod(-5, 7);
 
 ```
 
+### Disconnecting slots
+There are many circumstances where the programmer needs to diconnect a slot that
+no longer want to recieve events from the signal. This can be really important
+if the lifetime of the slots are shorter than the lifetime of the signal. That
+could cause the signal to call slots that have been destroyed but not
+disconnected, leading to undefined behaviour and probably segmentation faults.
+
+When a slot is connected, the return value from the  `connect` method returns
+an instance of the class `nod::connection`, that can be used to disconnect
+that slot.
+```cpp
+// Let's create a signal
+nod::signal<void()> signal;
+// Connect a slot, and save the connection
+nod::connection connection = signal.connect([](){
+                                 std::cout << "Hello, World!" << std::endl;
+                             });
+// Triggering the signal will call the slot
+signal();
+// Now we disconnect the slot
+connection.disconnect();
+// Triggering the signal will no longer call the slot
+signal();
+```
+
+### Scoped connections
+To assist in disconnecting slots, one can use the class `nod::scoped_connection`
+to capture a slot connection. A scoped connection will automatically disconnect
+the slot when the connection object goes out of scope.
+```cpp
+nod::signal<void()> signal;
+
+{
+	// Let's save the connection in a scoped_connection
+	nod::scoped_connection connection =
+		signal.connect([](){
+			std::cout << "Hello, World!" << std::endl; 
+		});
+	// If we trigger the signal, the slot will be called
+	signal();
+} // Our scoped connection is destructed, and disconnects the slot
+// Triggering the signal now will not call the slot
+signal();
+```
 
 ### More usage
 ```cpp
