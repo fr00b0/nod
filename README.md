@@ -72,8 +72,16 @@ nod(-5, 7);
 The test project uses [premake5](https://premake.github.io/download.html) to 
 generate make files or similiar.
 
+### Linux
+To build and run the tests, execute the following from the test directory:
+'''bash
+premake5 gmake
+make -C build/gmake
+bin/gmake/debug/nod_tests
+'''
+
 ### Visual Studio 2013
-To build and run the tests, exeucte the following from the test directory:
+To build and run the tests, execute the following from the test directory:
 
 ```batchfile
 REM Adjust paths to suite your environment
