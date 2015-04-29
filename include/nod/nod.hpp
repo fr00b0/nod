@@ -56,6 +56,7 @@ namespace nod {
 				disconnect();
 				_weak_disconnector = std::move( other._weak_disconnector );
 				_index = other._index;
+				return *this;
 			}
 
 			/// @returns `true` if the connection is connected to a signal object,
