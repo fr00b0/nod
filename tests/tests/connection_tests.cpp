@@ -1,6 +1,7 @@
-#include <catch.hpp>
-
+#include "../test_helpers.hpp"
 #include <nod/nod.hpp>
+
+#include <catch.hpp>
 
 #include <sstream>
 
@@ -75,7 +76,7 @@ SCENARIO( "Scoped connection will disconnect when destroyed" ) {
 		std::ostringstream ss;
 		nod::signal<void(void)> signal;
 		WHEN( "A slot get's connected and managed by a scoped connection" ) {
-			auto connection = std::make_unique<nod::scoped_connection>(signal.connect( [&](){ ss << "singaled!"; } ));
+			auto connection = test::make_unique<nod::scoped_connection>( signal.connect([&](){ ss << "singaled!"; }) );
 			THEN( "the connection is considered connected" ) {
 				REQUIRE( connection->connected() == true );
 			}
