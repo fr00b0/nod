@@ -103,10 +103,6 @@ TEST_CASE( "General tests", "[general]" ) {
 		signal(12);
 		signal(42);
 
-		nod::signal<void(std::string const&)> s;
-		s.connect( []( std::string const& s ){ std::cout << s << std::endl; } );
-		s( "tjoff" );
-
 		REQUIRE( ss.str() == "A: 12,B: 12,A: 42,B: 42," );
 	}
 
