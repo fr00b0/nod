@@ -167,6 +167,25 @@ namespace nod {
 			/// signals are default constructible
 			signal() = default;
 
+			// Destruct the signal object.
+			~signal() {
+				// If we are unlucky, some of the connected slots
+				// might be in the process of disconnecting from other threads.
+				// If this happens, we are risking to destruct the disconnector
+				// object managed by our shared pointer before they are done 
+				// disconnecting. This would be bad. To solve this problem, we
+				// discard the shared pointer (that is pointing to the disconnector
+				// object within our own instance), but keep a weak pointer to that
+				// instance. We then stall the destruction until all other weak
+				// pointers have released their "lock" (indicated by the fact that
+				// we will get a nullptr when locking our weak pointer).
+				std::weak_ptr<detail::disconnector> weak{_shared_disconnector};
+				_shared_disconnector.reset();
+				while( weak.lock() != nullptr )	{
+					// we just stall here, waiting for all threads to release the disconnector
+				}
+			}
+
 			/// Type that will be used to store the slots for this signal type.
 			using slot_type = std::function<R(A...)>;
 
