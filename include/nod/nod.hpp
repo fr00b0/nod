@@ -217,12 +217,17 @@ namespace nod {
 				return connection{ _shared_disconnector, index };
 			}
 	
+			/// Function call operator.
 			///
+			/// Calling this is how the signal is triggered and the
+			/// connected slots are called.
 			///
+			/// @note The slots will be called in the order they were 
+			///       connected to the signal.
 			///
-			///
-			template <class...Args>
-			void operator()( Args&&... args ) const {
+			/// @param args   Arguments that will be propagated to the
+			///               connected slots when they are called.
+			void operator()( A&&... args ) const {
 				std::lock_guard<std::mutex> lock{ _mutex };
 				for( auto const& slot : _slots ) {
 					if( slot ) {
