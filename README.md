@@ -1,5 +1,6 @@
 # Nod
-Dependency free header only signal-slot library.
+Dependency free, header only signals and slot library implemented with C++11.
+
 
 # Usage
 
