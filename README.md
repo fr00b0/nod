@@ -26,7 +26,7 @@ void endline() {
 	std::cout << std::endl;
 }
 
-nod::signal<void(void)> signal;
+nod::signal<void()> signal;
 signal.connect([](){
 		std::count << "Hello, World!";
 	});
