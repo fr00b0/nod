@@ -63,8 +63,8 @@ SCENARIO( "Example usage") {
 		nod::signal<void()> signal;
 		// Connect a slot, and save the connection
 		nod::connection connection = signal.connect([](){
-										 std::cout << "I'm connected!" << std::endl;
-									 });
+										std::cout << "I'm connected!" << std::endl;
+		                             });
 		// Triggering the signal will call the slot
 		signal();
 		// Now we disconnect the slot
@@ -76,7 +76,7 @@ SCENARIO( "Example usage") {
 	SECTION( "Scoped connections" ) {
 		// We create a signal
 		nod::signal<void()> signal;
-		// Let's use a scope to control liftime
+		// Let's use a scope to control lifetime
 		{ 
 			// Let's save the connection in a scoped_connection
 			nod::scoped_connection connection =

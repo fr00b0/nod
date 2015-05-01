@@ -97,7 +97,7 @@ the slot when the connection object goes out of scope.
 ```cpp
 // We create a signal
 nod::signal<void()> signal;
-// Let's use a scope to control liftime
+// Let's use a scope to control lifetime
 { 
 	// Let's save the connection in a scoped_connection
 	nod::scoped_connection connection =
