@@ -156,12 +156,6 @@ namespace nod {
 	/// Any function or function object is considered a slot, and 
 	/// can be connected to a signal instance, as long as the signature
 	/// of the slot matches the signature of the signal.
-	///
-	///
-	///
-	///
-	///
-	///
 	template <class R, class... A >
 	class signal<R(A...)>
 	{
@@ -196,10 +190,14 @@ namespace nod {
 			/// Type that will be used to store the slots for this signal type.
 			using slot_type = std::function<R(A...)>;
 
+			/// Connect a new slot to the signal.
 			///
-			///
-			///
-			///
+			/// The connected slot will be called every time the signal
+			/// is triggered.
+			/// @param slot   The slot to connect. This must be a callable with
+			///               the same signature as the singal itself.
+			/// @return       A connection object is returned, and can be used to
+			///               disconnect the slot.
 			template <class T>
 			connection connect( T&& slot ) {
 				std::lock_guard<std::mutex> lock{ _mutex };
