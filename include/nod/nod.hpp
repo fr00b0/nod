@@ -53,11 +53,8 @@ namespace nod {
 			{}
 
 			/// Move assign operator.
-			/// @note If this connection is connected, it will be disconnected when moving
-			///       another instance into it.
 			/// @param other   The instance to move from.
 			connection& operator=( connection&& other ) {
-				disconnect();
 				_weak_disconnector = std::move( other._weak_disconnector );
 				_index = other._index;
 				return *this;
