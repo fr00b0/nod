@@ -80,6 +80,15 @@ SCENARIO( "Signals will disconnect all slots when destroyed" ) {
 	}
 }
 
+SCENARIO( "Scoped connection objects are default constructible" ) {
+	GIVEN( "a default scoped constructed connection" ) {
+		nod::scoped_connection scoped;
+		THEN( "the scoped connection will not be considered connected" ) {
+			REQUIRE( scoped.connected() == false );
+		}	
+	}
+}
+
 SCENARIO( "Scoped connection will disconnect when destroyed" ) {
 	GIVEN( "A signal" ) {
 		std::ostringstream ss;

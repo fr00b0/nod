@@ -103,8 +103,8 @@ namespace nod {
 	class scoped_connection
 	{
 		public:
-			/// Scoped connections are not default constructible
-			scoped_connection() = delete;
+			/// Scoped are default constructible
+			scoped_connection() = default;
 			/// Scoped connections are not copy constructible
 			scoped_connection( scoped_connection const& ) = delete;
 			/// Scoped connections are not copy assingable
