@@ -110,6 +110,11 @@ namespace nod {
 			/// Scoped connections are not copy assingable
 			scoped_connection& operator=( scoped_connection const& ) = delete;
 
+			/// Move constructor
+			scoped_connection( scoped_connection&& other ) :
+				_connection( std::move(other._connection) )
+			{}
+
 			/// Construct a scoped connection from a connection object
 			/// @param connection   The connection object to manage
 			scoped_connection( connection&& c ) :
