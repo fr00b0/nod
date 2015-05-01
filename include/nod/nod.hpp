@@ -126,6 +126,33 @@ namespace nod {
 				disconnect();
 			}
 
+			/// Assignment operator moving a new connection into the instance.
+			/// @note If the scoped_connection instance already contains a
+			///       connection, that connection will be disconnected as if
+			///       the scoped_connection was destroyed.
+			/// @param c   New connection to manage
+			scoped_connection& operator=( connection&& c ) {
+				reset( std::forward<connection>(c) );
+				return *this;
+			}
+
+			/// Reset the underlying connection to another connection.
+			/// @note The connection currently managed by the scoped_connection
+			///       instance will be disconnected when resetting.
+			/// @param c   New connection to manage
+			void reset( connection&& c = {} ) {
+				disconnect();
+				_connection = std::move(c);
+			}
+
+			/// Release the underlying connection, without disconnecting it.
+			/// @returns The newly released connection instance is returned.
+			connection release() {
+				connection c = std::move(_connection);
+				_connection = connection{};
+				return c;
+			}
+
 			///
 			/// @returns `true` if the connection is connected to a signal object,
 			///          and `false` otherwise.
