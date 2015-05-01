@@ -5,6 +5,15 @@
 
 #include <sstream>
 
+SCENARIO( "Connection objects are default constructible" ) {
+	GIVEN( "a default constructed connection" ) {
+		nod::connection connection;
+		THEN( "the connection will not be considered connected" ) {
+			REQUIRE( connection.connected() == false );
+		}	
+	}
+}
+
 SCENARIO( "Slots can get connected and disconnected to signals" ) {
 	GIVEN( "A singnal" ) {
 		nod::signal<void(void)> signal;

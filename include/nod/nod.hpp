@@ -30,14 +30,18 @@ namespace nod {
 	/// This is used to be able to disconnect slots after they have been connected.
 	/// Used as return type for the connect method of the signals.
 	///
-	/// Connections are not default constructible.
+	/// Connections are default constructible.
 	/// Connections are not copy constructible or copy assignable.
 	/// Connections are move constructible and move assignable.
 	///
 	class connection {
 		public:
-			// Connection are not default constructible, copy constructible or copy assignable
-			connection() = delete;
+			/// Default constructor
+			connection() :
+				_index()
+			{}
+
+			// Connection are not copy constructible or copy assignable
 			connection( connection const& ) = delete;
 			connection& operator=( connection const& ) = delete;
 
