@@ -21,8 +21,8 @@ namespace nod {
 	} // namespace detail
 
 	/// Base template for the signal class
-	template< class T >
-	class signal;
+	template <class P, class T>
+	class signal_type;
 
 
 	/// Connection class.
@@ -76,7 +76,7 @@ namespace nod {
 		private:
 			/// The signal template is a friend of the connection, since it is the
 			/// only one allowed to create instances using the meaningful constructor.
-			template<class T> friend class signal;	
+			template<class P,class T> friend class signal_type;	
 
 			/// Create a connection.
 			/// @param shared_disconnector   Disconnector instance that will be used to disconnect
@@ -174,6 +174,36 @@ namespace nod {
 			connection _connection;
 	};
 
+	/// Policy for multithreaded use of signals
+	///
+	/// This policy provides mutex and lock types for use in
+	/// a multithreaded environment, where signals and slots
+	/// may exists in different threads.
+	///
+	/// This policy is used in the `nod::signal` type provided
+	/// by the library.
+	struct multithread_policy 
+	{
+		using mutex_type = std::mutex;
+		using mutex_lock_type = std::lock_guard<mutex_type>;
+	};
+
+	///
+	struct singlethread_policy
+	{
+		/// Dummy mutext type that doesn't do anything
+		struct mutex_type{};
+		/// Dummy lock type, that doesn't do any locking.
+		struct mutex_lock_type
+		{
+			/// A lock type must be constructible from a
+			/// mutex type from the same thread policy.
+			explicit mutex_lock_type( mutex_type const& ) {
+			}
+		};
+	};
+
+
 	/// Signal template specialization.
 	///
 	/// This is the main signal implementation, and it is used to
@@ -183,20 +213,33 @@ namespace nod {
 	/// Any function or function object is considered a slot, and 
 	/// can be connected to a signal instance, as long as the signature
 	/// of the slot matches the signature of the signal.
-	template <class R, class... A >
-	class signal<R(A...)>
+	///
+	/// @tparam P      Threading policy for the signal.
+	///                A threading policy must provide two type definitions:
+	///                 - P::mutex_type, this type will be used as a mutex
+	///                   in the singal_type class template.
+	///                 - P::mutex_lock_type, this type must implement a 
+	///                   constructor that takes a P::mutex_type as a parameter,
+	///                   and it must have the semantics of a scoped mutex lock
+	///                   like std::lock_guard, i.e. locking in the constructor
+	///                   and unlocking in the destructor.
+	///                   
+	/// @tparam R      Return value type of the slots connected to the signal.
+	/// @tparam A...   Argument types of the slots connected to the signal.  
+	template <class P, class R, class... A >
+	class signal_type<P,R(A...)>
 	{
 		public:
 			/// signals are not copy constructible
-			signal( signal const& ) = delete;
+			signal_type( signal_type const& ) = delete;
 			/// signals are not copy assignable
-			signal& operator=( signal const& ) = delete;
+			signal_type& operator=( signal_type const& ) = delete;
 
 			/// signals are default constructible
-			signal() = default;
+			signal_type() = default;
 
 			// Destruct the signal object.
-			~signal() {
+			~signal_type() {
 				// If we are unlucky, some of the connected slots
 				// might be in the process of disconnecting from other threads.
 				// If this happens, we are risking to destruct the disconnector
@@ -227,7 +270,7 @@ namespace nod {
 			///               disconnect the slot.
 			template <class T>
 			connection connect( T&& slot ) {
-				std::lock_guard<std::mutex> lock{ _mutex };
+				mutext_lock_type lock{ _mutex };
 				auto it = std::find_if( std::begin(_slots), std::end(_slots), 
 					[]( slot_type const& slot ){
 						return !slot;
@@ -259,7 +302,7 @@ namespace nod {
 			/// @param args   Arguments that will be propagated to the
 			///               connected slots when they are called.
 			void operator()( A&&... args ) const {
-				std::lock_guard<std::mutex> lock{ _mutex };
+				mutext_lock_type lock{ _mutex };
 				for( auto const& slot : _slots ) {
 					if( slot ) {
 						slot( args... );
@@ -268,6 +311,10 @@ namespace nod {
 			}
 
 		private:
+			/// Type of mutex, provided by threading policy
+			using mutex_type = typename P::mutex_type;
+			/// Type of mutex lock, provided by threading policy
+			using mutext_lock_type = typename P::mutex_lock_type;
 
 			/// Implementation of the disconnection operation.
 			///
@@ -276,7 +323,7 @@ namespace nod {
 			/// @param index   The slot index of the slot that should
 			///                be disconnected.
 			void disconnect( std::size_t index ) {
-				std::lock_guard<std::mutex> lock( _mutex );				
+				mutext_lock_type lock( _mutex );				
 				assert( _slots.size() > index );				
 				_slots[ index ] = slot_type{};
 			}
@@ -297,7 +344,7 @@ namespace nod {
 				/// Create a disconnector that works with a given signal instance.
 				/// @param ptr   Pointer to the signal instance that the disconnector
 				///              should work with.
-				disconnector( signal<R(A...)>* ptr ) :
+				disconnector( signal_type<P,R(A...)>* ptr ) :
 					_ptr( ptr )
 				{}
 
@@ -313,11 +360,11 @@ namespace nod {
 				}
 
 				/// Pointer to the current signal.
-				signal<R(A...)>* _ptr;
+				signal_type<P,R(A...)>* _ptr;
 			};
 
 			/// Mutex to syncronize access to the slot vector
-			mutable std::mutex _mutex;
+			mutable mutex_type _mutex;
 			/// Vector of all connected slots
 			std::vector<slot_type> _slots;
 			/// Disconnector operation, used for executing disconnection in a
@@ -336,6 +383,23 @@ namespace nod {
 		}
 		_weak_disconnector.reset();
 	}
+
+	/// Signal type that is safe to use in multithreaded environments,
+	/// where the signal and slots exists in different threads.
+	/// The multithreaded policy provides mutexes and locks to syncronize
+	/// access to the signals internals. 
+	///
+	/// This is the reccomended signal type, even for single threaded
+	/// environments.
+	template <class T> using signal = signal_type<multithread_policy, T>;
+
+	/// Signal type that is unsafe in multithreaded environments.
+	/// No syncronizations are provided to the signal_type for accessing 
+	/// the internals.
+	///
+	/// Only use this signal type if you are sure that your environment is
+	/// single threaded and performance is of importance.
+	template <class T> using unsafe_signal = signal_type<singlethread_policy, T>;
 } // namespace nod
 
 #endif // IG_NOD_INCLUDE_NOD_HPP
