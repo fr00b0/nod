@@ -271,19 +271,8 @@ namespace nod {
 			template <class T>
 			connection connect( T&& slot ) {
 				mutext_lock_type lock{ _mutex };
-				auto it = std::find_if( std::begin(_slots), std::end(_slots), 
-					[]( slot_type const& slot ){
-						return !slot;
-					});
-				std::size_t index;
-				if( it == std::end(_slots) ) {
-					_slots.push_back( std::forward<T>(slot) );
-					index = _slots.size()-1;
-				}
-				else {
-					index = std::distance( std::begin(_slots), it );
-					_slots[index] =  std::forward<T>(slot);
-				}				
+				_slots.push_back( std::forward<T>(slot) );
+				std::size_t index = _slots.size()-1;
 				if( _shared_disconnector == nullptr ) {
 					_disconnector = disconnector{ this };
 					_shared_disconnector = std::shared_ptr<detail::disconnector>{&_disconnector, detail::no_delete};
@@ -326,6 +315,9 @@ namespace nod {
 				mutext_lock_type lock( _mutex );				
 				assert( _slots.size() > index );				
 				_slots[ index ] = slot_type{};
+				while( _slots.size()>0 && !_slots.back() ) {
+					_slots.pop_back();
+				}
 			}
 			
 			/// Implementation of the shared disconnection state
