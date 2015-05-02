@@ -1,8 +1,7 @@
 # Nod
 Dependency free, header only signals and slot library implemented with C++11.
 
-
-# Usage
+## Usage
 
 ### Simple usage
 The following example creates a signal and then connects a lambda as a slot.
@@ -116,6 +115,27 @@ signal();
 //todo: write some more example usage
 ```
 
+## Thread safety
+There are two types of signals in the library. The first is `nod::signal<T>` which 
+is safe to use in a multi threaded environment. Multiple threads can read, write,
+connect slots and disconnect slots simultaneously, and the signal will provide the 
+nessesary synchronization. When triggering a slignal, all the registered slots will
+be called and executed by the thread that triggered the signal.
+
+The second type of signal is `nod::unsafe_signal<T>` which is **not** safe to use
+in a multi threaded environment. No syncronization will be performed on the internal
+state of the signal. Instances of the signal should theoretically be safe to read
+from multiple thread simultaneously, as long as no thread is writing to the same 
+object at the same time. There can be a performance gain involved in using the unsafe
+version of a signal, since no syncronization primitives will be used.
+
+`nod::connection` and `nod::scoped_connection` are thread safe for reading from
+multiple threads, as long as no thread is writing to the same object. Writing in this
+context means calling any non const member function, including destructing the object.
+If an object is being written by one thread, then all reads and writes to that object
+from the same or other threads needs to be prevented. This basically means that a 
+connection is only allowed to be disconnected from one thread, and you should not
+check connection status or reassign the connection while it is being disconnected.
 
 ## Building the tests
 The test project uses [premake5](https://premake.github.io/download.html) to 
