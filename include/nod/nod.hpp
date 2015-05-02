@@ -7,6 +7,7 @@
 #include <memory>       // std::shared_ptr, std::weak_ptr
 #include <algorithm>    // std::find_if()
 #include <cassert>      // assert()
+#include <thread>       // std::this_thread::yield()
 
 namespace nod {
 	// implementational details
@@ -174,7 +175,7 @@ namespace nod {
 			connection _connection;
 	};
 
-	/// Policy for multithreaded use of signals
+	/// Policy for multi threaded use of signals.
 	///
 	/// This policy provides mutex and lock types for use in
 	/// a multithreaded environment, where signals and slots
@@ -186,9 +187,21 @@ namespace nod {
 	{
 		using mutex_type = std::mutex;
 		using mutex_lock_type = std::lock_guard<mutex_type>;
+		/// Function that yields the current thread, allowing
+		/// the OS to reschedule.
+		static void yield_thread() {
+			std::this_thread::yield();
+		}
 	};
 
+	/// Policy for single threaded use of singals.
 	///
+	/// This policy provides dummy implementations for mutex
+	/// and lock types, resulting in that no syncronization
+	/// will take place.
+	///
+	/// This policy is used in the `nod::unsafe_signal` type
+	/// provided by the library.
 	struct singlethread_policy
 	{
 		/// Dummy mutext type that doesn't do anything
@@ -201,6 +214,10 @@ namespace nod {
 			explicit mutex_lock_type( mutex_type const& ) {
 			}
 		};
+		/// Dummy implementation of thread yielding, that
+		/// doesn't do any actual yielding.
+		static void yield_thread() {
+		}
 	};
 
 
@@ -253,7 +270,9 @@ namespace nod {
 				std::weak_ptr<detail::disconnector> weak{_shared_disconnector};
 				_shared_disconnector.reset();
 				while( weak.lock() != nullptr )	{
-					// we just stall here, waiting for all threads to release the disconnector
+					// we just yield here, allowing the OS to reschedule. We do
+					// this until all threads has released the disconnector object.
+					thread_policy::yield_thread();
 				}
 			}
 
@@ -300,10 +319,12 @@ namespace nod {
 			}
 
 		private:
+			/// Thread policy currently in use
+			using thread_policy = P;
 			/// Type of mutex, provided by threading policy
-			using mutex_type = typename P::mutex_type;
+			using mutex_type = typename thread_policy::mutex_type;
 			/// Type of mutex lock, provided by threading policy
-			using mutext_lock_type = typename P::mutex_lock_type;
+			using mutext_lock_type = typename thread_policy::mutex_lock_type;
 
 			/// Implementation of the disconnection operation.
 			///
