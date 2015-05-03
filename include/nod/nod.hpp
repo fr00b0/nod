@@ -204,7 +204,7 @@ namespace nod {
 	/// provided by the library.
 	struct singlethread_policy
 	{
-		/// Dummy mutext type that doesn't do anything
+		/// Dummy mutex type that doesn't do anything
 		struct mutex_type{};
 		/// Dummy lock type, that doesn't do any locking.
 		struct mutex_lock_type
@@ -289,7 +289,7 @@ namespace nod {
 			///               disconnect the slot.
 			template <class T>
 			connection connect( T&& slot ) {
-				mutext_lock_type lock{ _mutex };
+				mutex_lock_type lock{ _mutex };
 				_slots.push_back( std::forward<T>(slot) );
 				std::size_t index = _slots.size()-1;
 				if( _shared_disconnector == nullptr ) {
@@ -310,7 +310,7 @@ namespace nod {
 			/// @param args   Arguments that will be propagated to the
 			///               connected slots when they are called.
 			void operator()( A&&... args ) const {
-				mutext_lock_type lock{ _mutex };
+				mutex_lock_type lock{ _mutex };
 				for( auto const& slot : _slots ) {
 					if( slot ) {
 						slot( args... );
@@ -324,7 +324,7 @@ namespace nod {
 			/// Type of mutex, provided by threading policy
 			using mutex_type = typename thread_policy::mutex_type;
 			/// Type of mutex lock, provided by threading policy
-			using mutext_lock_type = typename thread_policy::mutex_lock_type;
+			using mutex_lock_type = typename thread_policy::mutex_lock_type;
 
 			/// Implementation of the disconnection operation.
 			///
@@ -333,7 +333,7 @@ namespace nod {
 			/// @param index   The slot index of the slot that should
 			///                be disconnected.
 			void disconnect( std::size_t index ) {
-				mutext_lock_type lock( _mutex );				
+				mutex_lock_type lock( _mutex );				
 				assert( _slots.size() > index );				
 				_slots[ index ] = slot_type{};
 				while( _slots.size()>0 && !_slots.back() ) {
