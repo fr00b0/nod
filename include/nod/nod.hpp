@@ -220,6 +220,81 @@ namespace nod {
 		}
 	};
 
+	/// Signal accumulator class template.
+	///
+	/// This acts sort of as a proxy for triggering a signal and
+	/// accumulating the slot return values.
+	///
+	/// This class is not really intended to instansiate by client code.
+	/// Instanses are aquired as return values of the method `accumulate()` 
+	/// called on signals.
+	///
+	/// @tparam S      Type of signal. The signal_accumulator acts
+	///                as a type of proxy for a signal instance of 
+	///                this type.
+	/// @tparam T      Type of initial value of the accumulate algorithm.
+	///                This type must meet the requirements of `CopyAssignable`
+	///                and `CopyConstructible`
+	/// @tparam F      Type of accumulation function.
+	/// @tparam A...   Argument types of the underlying signal type.
+	///
+	template <class S, class T, class F, class...A>
+	class signal_accumulator
+	{
+		public:
+			/// Result type when calling the accumulating function operator.
+			using result_type = typename std::result_of<F(A...)>::type;
+
+			/// Construct a signal_accumulator as a proxy to a given singal
+			//
+			/// @param signal   Signal instance.
+			/// @param init     Initial value of the accumulate algorithm.
+			/// @param func     Binary operation funcion object that will be
+			///                 applied to all slot return values.
+			///                 The signature of the funciton should be 
+			///                 equivalent of the following:
+			///                   `R func( T1 const& a, T2 const& b )`
+			///                  - The signature does not need to have `const&`.
+			///                  - The initial value, type `T`, must be implicitly
+			///                    convertible to `R`
+			///                  - The return type `R` must be implicitly convertible 
+			///                    to type `T1`.
+			///                  - The type `R` must be `CopyAssignable`.
+			///                  - The type `S::slot_type::result_type` (return type of
+			///                    the signals slots) must be implicitly convertible to
+			///                    type `T2`.
+			signal_accumulator( S const& signal, T init, F func ) :
+				_signal( signal ),
+				_init( init ),
+				_func( func )
+			{}
+
+			/// Function call operator.
+			///
+			/// Calling this will trigger the underlying signal and accumulate
+			/// all of the connected slots return values with the current 
+			/// initial value and accumulator function.
+			///
+			/// When called, this will invoke the accumulator function will
+			/// be called for each return value of the slots. The semantics
+			/// are similar to the `std::accumulate` algorithm.
+			///
+			/// @param args   Arguments to propagate to the slots of the
+			///               underlying when triggering the signal.
+			result_type operator()( A&&... args ) const {
+				return _signal.trigger_with_accumulator( _init, _func, std::forward<A>(args)... );
+			}
+
+		private:
+			
+			/// Reference to the underlying signal to proxy.
+			S const& _signal;
+			/// Initial value of the accumulate algorithm.
+			T _init;
+			/// Accumulator function.
+			F _func;
+
+	};
 
 	/// Signal template specialization.
 	///
@@ -318,13 +393,65 @@ namespace nod {
 				}
 			}
 
+			/// Construct a accumulator proxy object for the signal.
+			///
+			/// The intended purpose of this function is to create a function
+			/// object that can be used to trigger the signal and accumulate
+			/// all the slot return values.
+			///
+			/// The algorithm used to accumulate slot return values is similar
+			/// to `std::accumulate`. A given binary function is called for
+			/// each return value with the parameters consisting of the
+			/// return value of the accumulator function applied to the 
+			/// previous slots return value, and the current slots return value.
+			/// A inital value must be provided for the first slot return type.
+			/// 
+			/// @note This can only be used on signals that have slots with
+			///       non-void return types, since we can't accumulate void
+			///       values.
+			///       
+			/// @tparam T      The type of the initial value given to the accumulator.
+			/// @tparam F      The accumulator function type.
+			/// @param init    Initial value given to the accumulator.
+			/// @param op      Binary operator function object to apply by the accumulator.
+			///                The signature of the funciton should be 
+			///                equivalent of the following:
+			///                  `R func( T1 const& a, T2 const& b )`
+			///                 - The signature does not need to have `const&`.
+			///                 - The initial value, type `T`, must be implicitly
+			///                   convertible to `R`
+			///                 - The return type `R` must be implicitly convertible 
+			///                   to type `T1`.
+			///                 - The type `R` must be `CopyAssignable`.
+			///                 - The type `S::slot_type::result_type` (return type of
+			///                   the signals slots) must be implicitly convertible to
+			///                   type `T2`.
+			template <class T, class F>
+			signal_accumulator<signal_type, T, F, A...> accumulate( T init, F op ) const {
+				static_assert( std::is_same<R,void>::value == false, "Unable to accumulate slots with 'void' as return type." );
+				return { *this, init, op };
+			}
+
 		private:
+			template<class, class, class, class...> friend class signal_accumulator;
 			/// Thread policy currently in use
 			using thread_policy = P;
 			/// Type of mutex, provided by threading policy
 			using mutex_type = typename thread_policy::mutex_type;
 			/// Type of mutex lock, provided by threading policy
 			using mutex_lock_type = typename thread_policy::mutex_lock_type;
+
+			template <class T, class F>
+			typename signal_accumulator<signal_type, T, F, A...>::result_type trigger_with_accumulator( T const& init, F& func, A&&... args ) const {
+				mutex_lock_type lock{ _mutex };
+				typename signal_accumulator<signal_type, T, F, A...>::result_type result = init;
+				for( auto const& slot : _slots ) {
+					if( slot ) {
+						result = func( result, slot( args... ) );
+					}
+				}
+				return result;
+			}
 
 			/// Implementation of the disconnection operation.
 			///
