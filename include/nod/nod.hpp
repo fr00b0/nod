@@ -8,7 +8,6 @@
 #include <algorithm>    // std::find_if()
 #include <cassert>      // assert()
 #include <thread>       // std::this_thread::yield()
-#include <type_traits>  // std::enable_if_t<>, std::is_same<T,U>
 
 namespace nod {
 	// implementational details
@@ -20,48 +19,10 @@ namespace nod {
 		/// Deleter that doesn't delete
 		inline void no_delete(disconnector*){			
 		};
-
-		/// Tag type for overload resolution of the trigger 
-		/// function in the `singal_type` template.
-		struct without_collector {};
-		/// Tag type for overload resolution of the trigger
-		/// function in the `signal_type` template.
-		struct with_collector {};
-
-		/// Helper to determine what tag struct should be
-		/// used for overload resolution of the trigger
-		/// function in the `signal_type` template.
-		///
-		/// If the combiner result type is something other
-		/// than `void`, the tag for slot return value collection
-		/// will be used.
-		template <class SR, class CR, class Enable = void>
-		struct select_trigger{
-			using type = with_collector;
-			static_assert( std::is_same<void, CR>::value == true ||
-			               std::is_same<void, SR>::value == false,
-			               "Invalid combination of return types of signal and combiner. It's not possible to collect `void` return values." );
-		};
-
-		/// Helper to determine what tag struct should be
-		/// used for overload resolution of the trigger
-		/// function in the `signal_type` template.
-		///
-		/// If the combiner has a result type of `void` then
-		/// the tag for ignoring slot return values will be
-		/// used.
-		template <class SR, class CR>
-		struct select_trigger<SR, CR, 
-			typename std::enable_if<
-				std::is_same<void, CR>::value == true
-			>::type
-		> {
-			using type = without_collector;
-		};
 	} // namespace detail
 
 	/// Base template for the signal class
-	template <class P, class C, class T>
+	template <class P, class T>
 	class signal_type;
 
 
@@ -116,7 +77,7 @@ namespace nod {
 		private:
 			/// The signal template is a friend of the connection, since it is the
 			/// only one allowed to create instances using the meaningful constructor.
-			template<class P, class C, class T> friend class signal_type;	
+			template<class P,class T> friend class signal_type;	
 
 			/// Create a connection.
 			/// @param shared_disconnector   Disconnector instance that will be used to disconnect
@@ -259,11 +220,6 @@ namespace nod {
 		}
 	};
 
-	/// Default collector that doesn't do any collecting.
-	struct null_collector
-	{
-		using result_type = void;
-	};
 
 	/// Signal template specialization.
 	///
@@ -284,14 +240,11 @@ namespace nod {
 	///                   and it must have the semantics of a scoped mutex lock
 	///                   like std::lock_guard, i.e. locking in the constructor
 	///                   and unlocking in the destructor.
-	/// @tparam C      Collector type. This specifies how the return values of
-	///                slots will be handled by the function call operator of
-	///                the signal.
 	///                   
 	/// @tparam R      Return value type of the slots connected to the signal.
 	/// @tparam A...   Argument types of the slots connected to the signal.  
-	template <class P, class C, class R, class... A >
-	class signal_type<P,C,R(A...)>
+	template <class P, class R, class... A >
+	class signal_type<P,R(A...)>
 	{
 		public:
 			/// signals are not copy constructible
@@ -352,14 +305,17 @@ namespace nod {
 			/// connected slots are called.
 			///
 			/// @note The slots will be called in the order they were 
-			///       connected to the signal, and all slots will be 
-			///       executed sequentially by the triggering thread.
+			///       connected to the signal.
 			///
 			/// @param args   Arguments that will be propagated to the
 			///               connected slots when they are called.
-			typename C::result_type operator()( A&&... args ) const {
-				using select_type = typename detail::select_trigger<R,typename C::result_type>::type;
-				return trigger( select_type(), std::forward<A>(args)... );
+			void operator()( A&&... args ) const {
+				mutex_lock_type lock{ _mutex };
+				for( auto const& slot : _slots ) {
+					if( slot ) {
+						slot( args... );
+					}
+				}
 			}
 
 		private:
@@ -369,50 +325,6 @@ namespace nod {
 			using mutex_type = typename thread_policy::mutex_type;
 			/// Type of mutex lock, provided by threading policy
 			using mutex_lock_type = typename thread_policy::mutex_lock_type;
-
-			/// Trigger the singal, calling all slots, but don't use
-			/// a collector to gather the return values of the slots.
-			///
-			/// This version of the trigger method will be used when
-			/// current collector type has `void` as return type.
-			///
-			/// @note The trigger method that is used is determined by
-			///       the collector usage tag.
-			///
-			/// @param args   Arguments that will be propagated to the
-			///               connected slots when they are called.
-			void trigger( detail::without_collector const&, A&&... args ) const {
-				mutex_lock_type lock{ _mutex };
-				for( auto const& slot : _slots ) {
-					if( slot ) {
-						slot( args... );
-					}
-				}
-			}
-
-			/// Trigger the singal, calling all slots, and use
-			/// a collector to gather the return values of the slots.
-			///
-			/// This version of the trigger method will be used when
-			/// current collector type has a return type other than
-			/// `void` as return type.
-			///
-			/// @note The trigger method that is used is determined by
-			///       the collector usage tag.
-			///
-			/// @param args   Arguments that will be propagated to the
-			///               connected slots when they are called.
-			typename C::result_type trigger( detail::with_collector const&, A&&... args ) const {
-				mutex_lock_type lock{ _mutex };
-				C collector;
-				typename C::result_type result;
-				for( auto const& slot : _slots ) {
-					if( slot ) {
-						collector( result, slot( args... ) );
-					}
-				}
-				return result;
-			}
 
 			/// Implementation of the disconnection operation.
 			///
@@ -445,7 +357,7 @@ namespace nod {
 				/// Create a disconnector that works with a given signal instance.
 				/// @param ptr   Pointer to the signal instance that the disconnector
 				///              should work with.
-				disconnector( signal_type<P,C,R(A...)>* ptr ) :
+				disconnector( signal_type<P,R(A...)>* ptr ) :
 					_ptr( ptr )
 				{}
 
@@ -461,7 +373,7 @@ namespace nod {
 				}
 
 				/// Pointer to the current signal.
-				signal_type<P,C,R(A...)>* _ptr;
+				signal_type<P,R(A...)>* _ptr;
 			};
 
 			/// Mutex to syncronize access to the slot vector
@@ -492,7 +404,7 @@ namespace nod {
 	///
 	/// This is the reccomended signal type, even for single threaded
 	/// environments.
-	template <class T, class C = null_collector> using signal = signal_type<multithread_policy, C, T>;
+	template <class T> using signal = signal_type<multithread_policy, T>;
 
 	/// Signal type that is unsafe in multithreaded environments.
 	/// No syncronizations are provided to the signal_type for accessing 
@@ -500,7 +412,7 @@ namespace nod {
 	///
 	/// Only use this signal type if you are sure that your environment is
 	/// single threaded and performance is of importance.
-	template <class T, class C = null_collector> using unsafe_signal = signal_type<singlethread_policy, C, T>;
+	template <class T> using unsafe_signal = signal_type<singlethread_policy, T>;
 } // namespace nod
 
 #endif // IG_NOD_INCLUDE_NOD_HPP
