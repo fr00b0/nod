@@ -89,4 +89,31 @@ SCENARIO( "Example usage") {
 		// Triggering the signal now will not call the slot
 		signal();	
 	}
+	SECTION( "Slot return values" ) {
+		// We create a singal with slots that return a value
+		nod::signal<int(int, int)> signal;
+		// Then we connect some signals
+		signal.connect( std::plus<int>{} );
+		signal.connect( std::multiplies<int>{} );
+		signal.connect( std::minus<int>{} );		
+		// Let's say we want to calculate the sum of all the slot return values
+		// when triggering the singal with the parameters 10 and 100.
+		// We do this by accumulating the return values with the initial value 0
+		// and a plus function object, like so:
+		std::cout << "Accumulated sum: " << signal.accumulate(0, std::plus<int>{})(10,100) << std::endl;
+		// Or accumulate by multiplying (this needs 1 as initial value):
+		std::cout << "Accumulated product: " << signal.accumulate(1, std::multiplies<int>{})(10,100) << std::endl;
+		// If we instead want to build a vector with all the return values
+		// we can accumulate them this way (start with a empty vector and add each value):			
+		auto vec = signal.accumulate( std::vector<int>{}, []( std::vector<int>& result, int value ) {
+				result.push_back( value );
+				return result;
+			})(10,100);
+
+		std::cout << "Accumulated vector: ";
+		for( auto const& element : vec ) {
+			std::cout << element << " "; 
+		}
+		std::cout << std::endl;
+	}
 }

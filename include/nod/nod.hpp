@@ -243,7 +243,7 @@ namespace nod {
 	{
 		public:
 			/// Result type when calling the accumulating function operator.
-			using result_type = typename std::result_of<F(A...)>::type;
+			using result_type = typename std::result_of<F(T, typename S::slot_type::result_type)>::type;
 
 			/// Construct a signal_accumulator as a proxy to a given singal
 			//
@@ -384,7 +384,7 @@ namespace nod {
 			///
 			/// @param args   Arguments that will be propagated to the
 			///               connected slots when they are called.
-			void operator()( A&&... args ) const {
+			void operator()( A const&... args ) const {
 				mutex_lock_type lock{ _mutex };
 				for( auto const& slot : _slots ) {
 					if( slot ) {
@@ -442,15 +442,14 @@ namespace nod {
 			using mutex_lock_type = typename thread_policy::mutex_lock_type;
 
 			template <class T, class F>
-			typename signal_accumulator<signal_type, T, F, A...>::result_type trigger_with_accumulator( T const& init, F& func, A&&... args ) const {
+			typename signal_accumulator<signal_type, T, F, A...>::result_type trigger_with_accumulator( T value, F& func, A const&... args ) const {
 				mutex_lock_type lock{ _mutex };
-				typename signal_accumulator<signal_type, T, F, A...>::result_type result = init;
 				for( auto const& slot : _slots ) {
 					if( slot ) {
-						result = func( result, slot( args... ) );
+						value = func( value, slot( args... ) );
 					}
 				}
-				return result;
+				return value;
 			}
 
 			/// Implementation of the disconnection operation.
