@@ -105,7 +105,7 @@ SCENARIO( "Example usage") {
 		std::cout << "Accumulated product: " << signal.accumulate(1, std::multiplies<int>{})(10,100) << std::endl;
 		// If we instead want to build a vector with all the return values
 		// we can accumulate them this way (start with a empty vector and add each value):			
-		auto vec = signal.accumulate( std::vector<int>{}, []( std::vector<int>& result, int value ) {
+		auto vec = signal.accumulate( std::vector<int>{}, []( std::vector<int> result, int value ) {
 				result.push_back( value );
 				return result;
 			})(10,100);

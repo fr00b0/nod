@@ -17,10 +17,10 @@ SCENARIO( "It's possible to accumulate the return values of slots" ) {
 			}
 		}
 		AND_WHEN( "we use a lambda to accumulate values into a vector" ) {
-			auto result = signal.accumulate( std::vector<double>{}, []( std::vector<double>& partial, double slot_result ) {
+			auto result = signal.accumulate( std::vector<double>{}, []( std::vector<double> partial, double slot_result ) {
 					partial.push_back( slot_result );
 					return partial;
-				})(42,12);			
+				})(42.0,12.0);
 			THEN( "the resulting vector contains all the return values of the slots" ) {
 				REQUIRE( result == (std::vector<double>{std::multiplies<double>{}(42,12), std::plus<double>{}(42,12), std::minus<double>{}(42,12)}) );
 			}
