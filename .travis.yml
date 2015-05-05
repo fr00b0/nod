@@ -5,7 +5,7 @@ before_install:
  - sudo apt-get -qq update
  - sudo apt-get install premake5
 
- script:
-  - premake5 --file=tests/premake5.lua gmake
-  - make -C tests/build/gmake release
-  - tests/bin/nod_tests
+script:
+ - premake5 --file=tests/premake5.lua gmake
+ - make -C tests/build/gmake release
+ - tests/bin/nod_tests
