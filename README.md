@@ -110,9 +110,35 @@ nod::signal<void()> signal;
 signal();	
 ```
 
-### More usage
+### Slot return values
+It is possible for slots to have a return value. The return values can be returned from the signal using a *accumulator*, which is a function object that acts as a proxy object that processes the slot return values. When triggering a signal through a accumulator, the accumulator gets called for each slot return value, does the desired accumulation and then return the result to the code triggering the signal.
+The accumulator is designed to work in a similar way as the STL numerical algorithm `std::accumulate`.
 ```cpp
-//todo: write some more example usage
+// We create a singal with slots that return a value
+nod::signal<int(int, int)> signal;
+// Then we connect some signals
+signal.connect( std::plus<int>{} );
+signal.connect( std::multiplies<int>{} );
+signal.connect( std::minus<int>{} );		
+// Let's say we want to calculate the sum of all the slot return values
+// when triggering the singal with the parameters 10 and 100.
+// We do this by accumulating the return values with the initial value 0
+// and a plus function object, like so:
+std::cout << "Sum: " << signal.accumulate(0, std::plus<int>{})(10,100) << std::endl;
+// Or accumulate by multiplying (this needs 1 as initial value):
+std::cout << "Product: " << signal.accumulate(1, std::multiplies<int>{})(10,100) << std::endl;
+// If we instead want to build a vector with all the return values
+// we can accumulate them this way (start with a empty vector and add each value):			
+auto vec = signal.accumulate( std::vector<int>{}, []( std::vector<int> result, int value ) {
+		result.push_back( value );
+		return result;
+	})(10,100);
+
+std::cout << "Vector: ";
+for( auto const& element : vec ) {
+	std::cout << element << " "; 
+}
+std::cout << std::endl;
 ```
 
 ## Thread safety
@@ -142,7 +168,7 @@ The test project uses [premake5](https://premake.github.io/download.html) to
 generate make files or similiar.
 
 ### Linux
-To build and run the tests, execute the following from the test directory:
+To build and run the tests using gcc and gmake on linux, execute the following from the test directory:
 ```bash
 premake5 gmake
 make -C build/gmake
