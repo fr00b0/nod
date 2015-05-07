@@ -19,4 +19,4 @@ before_script:
 
 script:
  - make -C tests/build/gmake config=release
- - tests/bin/nod_tests
+ - tests/bin/gmake/release/nod_tests
