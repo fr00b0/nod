@@ -2,5 +2,5 @@ language: cpp
 
 script:
  - tools/linux_x64/premake5 --file=tests/premake5.lua gmake
- - make -C tests/build/gmake release
+ - make -C tests/build/gmake config=release
  - tests/bin/nod_tests
