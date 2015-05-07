@@ -7,6 +7,7 @@ before_install:
  - sudo apt-get update
 
 install:
+ - apt search premake
  - sudo apt-get install premake5
 
 script:
