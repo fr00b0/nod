@@ -1,6 +1,7 @@
 # Nod
-Dependency free, header only signals and slot library implemented with C++11.
+[![Build Status](https://travis-ci.org/fr00b0/nod.svg?branch=master)](https://travis-ci.org/fr00b0/nod)
 
+Dependency free, header only signals and slot library implemented with C++11.
 ## Usage
 
 ### Simple usage
