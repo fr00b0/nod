@@ -100,9 +100,9 @@ SCENARIO( "Example usage") {
 		// when triggering the singal with the parameters 10 and 100.
 		// We do this by accumulating the return values with the initial value 0
 		// and a plus function object, like so:
-		std::cout << "Accumulated sum: " << signal.accumulate(0, std::plus<int>{})(10,100) << std::endl;
+		std::cout << "Sum: " << signal.accumulate(0, std::plus<int>{})(10,100) << std::endl;
 		// Or accumulate by multiplying (this needs 1 as initial value):
-		std::cout << "Accumulated product: " << signal.accumulate(1, std::multiplies<int>{})(10,100) << std::endl;
+		std::cout << "Product: " << signal.accumulate(1, std::multiplies<int>{})(10,100) << std::endl;
 		// If we instead want to build a vector with all the return values
 		// we can accumulate them this way (start with a empty vector and add each value):			
 		auto vec = signal.accumulate( std::vector<int>{}, []( std::vector<int> result, int value ) {
@@ -110,10 +110,16 @@ SCENARIO( "Example usage") {
 				return result;
 			})(10,100);
 
-		std::cout << "Accumulated vector: ";
+		std::cout << "Vector: ";
 		for( auto const& element : vec ) {
 			std::cout << element << " "; 
 		}
 		std::cout << std::endl;
+
+		// These checks are not part of the usage example, but we can just as well
+		// turn this example into a verifying test when we have the chance.
+		REQUIRE( signal.accumulate(0, std::plus<int>{})(10,100) == 1020 );
+		REQUIRE( signal.accumulate(1, std::multiplies<int>{})(10,100) == -9900000 );
+		REQUIRE( vec == (std::vector<int>{110, 1000, -90}) );
 	}
 }
