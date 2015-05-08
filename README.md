@@ -1,5 +1,6 @@
 # Nod
 [![Build Status](https://travis-ci.org/fr00b0/nod.svg?branch=master)](https://travis-ci.org/fr00b0/nod)
+[![GitHub tag](https://img.shields.io/github/tag/fr00b0/nod.svg?label=version)]()
 
 Dependency free, header only signals and slot library implemented with C++11.
 ## Usage
