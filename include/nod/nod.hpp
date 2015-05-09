@@ -8,6 +8,8 @@
 #include <algorithm>    // std::find_if()
 #include <cassert>      // assert()
 #include <thread>       // std::this_thread::yield()
+#include <type_traits>  // std::is_same
+#include <iterator>     // std::back_inserter
 
 namespace nod {
 	// implementational details
@@ -428,8 +430,31 @@ namespace nod {
 			///                   type `T2`.
 			template <class T, class F>
 			signal_accumulator<signal_type, T, F, A...> accumulate( T init, F op ) const {
-				static_assert( std::is_same<R,void>::value == false, "Unable to accumulate slots with 'void' as return type." );
+				static_assert( std::is_same<R,void>::value == false, "Unable to accumulate slot return values with 'void' as return type." );
 				return { *this, init, op };
+			}
+
+
+			/// Trigger the signal, calling the slots and aggregate all
+			/// the slot return values into a container.
+			///
+			/// @tparam C     The type of container. This type must be
+			///               `DefaultConstructible`, and usable with 
+			///               `std::back_insert_iterator`. Additionally it
+			///               must be either copyable or moveable.
+			/// @param args   The arguments to propagate to the slots.
+			template <class C>
+			C aggregate( A const&... args ) const {
+				static_assert( std::is_same<R,void>::value == false, "Unable to aggregate slot return values with 'void' as return type." );
+				mutex_lock_type lock{ _mutex };
+				C container;
+				auto iterator = std::back_inserter( container );
+				for( auto const& slot : _slots ) {
+					if( slot ) {
+						(*iterator) = slot( args... );
+					}
+				}
+				return container;
 			}
 
 		private:

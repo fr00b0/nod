@@ -27,3 +27,18 @@ SCENARIO( "It's possible to accumulate the return values of slots" ) {
 		}
 	}
 }
+
+SCENARIO( "It's possible to aggregate the return values of slots into a container" ) {
+	GIVEN( "a signal with three slots that return a double" ) {
+		nod::signal<double(double,double)> signal;
+		signal.connect( std::multiplies<double>{} );
+		signal.connect( std::plus<double>{} );
+		signal.connect( std::minus<double>{} );
+		WHEN( "we trigger the signal through the aggregate method to aggregate into a vector<double>" ) {
+			auto result = signal.aggregate<std::vector<double>>(42.0,12.0);
+			THEN( "the result is a vector with all slot return values" ) {
+				REQUIRE( result == (std::vector<double>{std::multiplies<double>{}(42,12), std::plus<double>{}(42,12), std::minus<double>{}(42,12) }));
+			}
+		}
+	}
+}
