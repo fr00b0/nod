@@ -428,8 +428,14 @@ namespace nod {
 			///                   type `T2`.
 			template <class T, class F>
 			signal_accumulator<signal_type, T, F, A...> accumulate( T init, F op ) const {
-				static_assert( std::is_same<R,void>::value == false, "Unable to accumulate slots with 'void' as return type." );
+				static_assert( std::is_same<R,void>::value == false, "Unable to accumulate slot return values with 'void' as return type." );
 				return { *this, init, op };
+			}
+
+			template <class C>
+			C aggregate( A const&... args ) const {
+				static_assert( std::is_same<R,void>::value == false, "Unable to aggregate slot return values with 'void' as return type." );
+				throw std::runtime_error("not implemented");
 			}
 
 		private:
