@@ -42,3 +42,5 @@
 *.log
 *.suo
 *.unsuccessfulbuild
+*.sublime-project
+*.sublime-workspace
