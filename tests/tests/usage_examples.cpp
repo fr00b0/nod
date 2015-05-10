@@ -89,7 +89,7 @@ SCENARIO( "Example usage") {
 		// Triggering the signal now will not call the slot
 		signal();	
 	}
-	SECTION( "Slot return values" ) {
+	SECTION( "Slot return values (accumulate)" ) {
 		// We create a singal with slots that return a value
 		nod::signal<int(int, int)> signal;
 		// Then we connect some signals
@@ -120,6 +120,23 @@ SCENARIO( "Example usage") {
 		// turn this example into a verifying test when we have the chance.
 		REQUIRE( signal.accumulate(0, std::plus<int>{})(10,100) == 1020 );
 		REQUIRE( signal.accumulate(1, std::multiplies<int>{})(10,100) == -9900000 );
+		REQUIRE( vec == (std::vector<int>{110, 1000, -90}) );
+	}
+	SECTION( "Slot return values (aggregate)" ) {
+		// We create a singal
+		nod::signal<int(int, int)> signal;
+		// Let's connect some slots
+		signal.connect( std::plus<int>{} );
+		signal.connect( std::multiplies<int>{} );
+		signal.connect( std::minus<int>{} );
+		// We can now trigger the signal and aggregate the slot return values
+		auto vec = signal.aggregate<std::vector<int>>(10,100);
+
+		std::cout << "Result: ";
+		for( auto const& element : vec ) {
+			std::cout << element << " "; 
+		}
+		std::cout << std::endl;
 		REQUIRE( vec == (std::vector<int>{110, 1000, -90}) );
 	}
 }
