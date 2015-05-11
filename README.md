@@ -41,8 +41,11 @@ signal.connect(endline);
 
 // Call the slots
 signal();
-
 ```
+
+#### Slot type
+The signal types in the library support connection of the same types that is
+supported by `std::function<T>`.
 
 ### Slot arguments
 When a signal calls it's connected slots, any arguments passed to the signal
