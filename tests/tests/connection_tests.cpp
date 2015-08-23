@@ -10,7 +10,7 @@ SCENARIO( "Connection objects are default constructible" ) {
 		nod::connection connection;
 		THEN( "the connection will not be considered connected" ) {
 			REQUIRE( connection.connected() == false );
-		}	
+		}
 	}
 }
 
@@ -21,7 +21,7 @@ SCENARIO( "Slots can get connected and disconnected to signals" ) {
 			auto connection = signal.connect( [](){} );
 			THEN( "the resulting connection is considered connected" ) {
 				REQUIRE( connection.connected() == true );
-			}		
+			}
 			AND_WHEN( "the connection is disconnected" ) {
 				connection.disconnect();
 				THEN( "the connetion is considered disconnected" ) {
@@ -48,8 +48,8 @@ SCENARIO( "Signals can be invoked and will trigger connected slots" ) {
 			AND_WHEN( "we disconnect that slot with the connection object" ) {
 				connection.disconnect();
 				THEN( "the slot will no longer be called when invoking the signal" ) {
-					signal(12.5);				
-					REQUIRE( ss.str().empty() ); 
+					signal(12.5);
+					REQUIRE( ss.str().empty() );
 				}
 			}
 		}
@@ -107,7 +107,7 @@ SCENARIO( "Signals will disconnect all slots when destroyed" ) {
 					REQUIRE( connection2.connected() == false );
 					REQUIRE( connection3.connected() == false );
 				}
-			}			
+			}
 		}
 	}
 }
@@ -117,7 +117,7 @@ SCENARIO( "Scoped connection objects are default constructible" ) {
 		nod::scoped_connection scoped;
 		THEN( "the scoped connection will not be considered connected" ) {
 			REQUIRE( scoped.connected() == false );
-		}	
+		}
 	}
 }
 
@@ -148,7 +148,7 @@ SCENARIO( "Scoped connections can be reset" ) {
 		WHEN( "A slot get's connected and managed by a scoped connection" ) {
 			nod::scoped_connection scoped = signal.connect( [&](){ ss << "Signaled!"; } );
 			THEN( "the connection is considered connected" ) {
-				REQUIRE( scoped.connected() == true );		
+				REQUIRE( scoped.connected() == true );
 			}
 			AND_WHEN( "the connection is reset to empty") {
 				scoped.reset();
@@ -158,12 +158,12 @@ SCENARIO( "Scoped connections can be reset" ) {
 				AND_THEN( "the connection is disconnected, so the slot will not be called when triggering the signal") {
 					signal();
 					REQUIRE( ss.str().empty() );
-				}				
+				}
 			}
 			AND_WHEN( "The scoped connection is reset to another connection" ) {
 				scoped.reset( signal.connect( [&](){ ss << "Honk!"; } ) );
 				THEN( "The scoped connection is considered connected" ) {
-					REQUIRE( scoped.connected() == true );					
+					REQUIRE( scoped.connected() == true );
 				}
 				AND_THEN( "The first connection is disconnected, so the slot will call the new slot when triggered") {
 					signal();

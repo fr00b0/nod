@@ -17,9 +17,9 @@ namespace nod {
 		/// Interface for type erasure when disconnecting slots
 		struct disconnector {
 			virtual void operator()( std::size_t index ) const = 0;
-		};		
+		};
 		/// Deleter that doesn't delete
-		inline void no_delete(disconnector*){			
+		inline void no_delete(disconnector*){
 		};
 	} // namespace detail
 
@@ -79,11 +79,11 @@ namespace nod {
 		private:
 			/// The signal template is a friend of the connection, since it is the
 			/// only one allowed to create instances using the meaningful constructor.
-			template<class P,class T> friend class signal_type;	
+			template<class P,class T> friend class signal_type;
 
 			/// Create a connection.
 			/// @param shared_disconnector   Disconnector instance that will be used to disconnect
-			///                              the connection when the time comes. A weak pointer 
+			///                              the connection when the time comes. A weak pointer
 			///                              to the disconnector will be held within the connection
 			///                              object.
 			/// @param index                 The slot index of the connection.
@@ -99,7 +99,7 @@ namespace nod {
 	};
 
 	/// Scoped connection class.
-	/// 
+	///
 	/// This type of connection is automatically disconnected when
 	/// the connection object is destructed.
 	///
@@ -185,7 +185,7 @@ namespace nod {
 	///
 	/// This policy is used in the `nod::signal` type provided
 	/// by the library.
-	struct multithread_policy 
+	struct multithread_policy
 	{
 		using mutex_type = std::mutex;
 		using mutex_lock_type = std::lock_guard<mutex_type>;
@@ -228,11 +228,11 @@ namespace nod {
 	/// accumulating the slot return values.
 	///
 	/// This class is not really intended to instansiate by client code.
-	/// Instanses are aquired as return values of the method `accumulate()` 
+	/// Instanses are aquired as return values of the method `accumulate()`
 	/// called on signals.
 	///
 	/// @tparam S      Type of signal. The signal_accumulator acts
-	///                as a type of proxy for a signal instance of 
+	///                as a type of proxy for a signal instance of
 	///                this type.
 	/// @tparam T      Type of initial value of the accumulate algorithm.
 	///                This type must meet the requirements of `CopyAssignable`
@@ -253,13 +253,13 @@ namespace nod {
 			/// @param init     Initial value of the accumulate algorithm.
 			/// @param func     Binary operation funcion object that will be
 			///                 applied to all slot return values.
-			///                 The signature of the funciton should be 
+			///                 The signature of the funciton should be
 			///                 equivalent of the following:
 			///                   `R func( T1 const& a, T2 const& b )`
 			///                  - The signature does not need to have `const&`.
 			///                  - The initial value, type `T`, must be implicitly
 			///                    convertible to `R`
-			///                  - The return type `R` must be implicitly convertible 
+			///                  - The return type `R` must be implicitly convertible
 			///                    to type `T1`.
 			///                  - The type `R` must be `CopyAssignable`.
 			///                  - The type `S::slot_type::result_type` (return type of
@@ -274,7 +274,7 @@ namespace nod {
 			/// Function call operator.
 			///
 			/// Calling this will trigger the underlying signal and accumulate
-			/// all of the connected slots return values with the current 
+			/// all of the connected slots return values with the current
 			/// initial value and accumulator function.
 			///
 			/// When called, this will invoke the accumulator function will
@@ -288,7 +288,7 @@ namespace nod {
 			}
 
 		private:
-			
+
 			/// Reference to the underlying signal to proxy.
 			S const& _signal;
 			/// Initial value of the accumulate algorithm.
@@ -301,10 +301,10 @@ namespace nod {
 	/// Signal template specialization.
 	///
 	/// This is the main signal implementation, and it is used to
-	/// implement the observer pattern whithout the overhead 
+	/// implement the observer pattern whithout the overhead
 	/// boilerplate code that typically comes with it.
 	///
-	/// Any function or function object is considered a slot, and 
+	/// Any function or function object is considered a slot, and
 	/// can be connected to a signal instance, as long as the signature
 	/// of the slot matches the signature of the signal.
 	///
@@ -312,14 +312,14 @@ namespace nod {
 	///                A threading policy must provide two type definitions:
 	///                 - P::mutex_type, this type will be used as a mutex
 	///                   in the singal_type class template.
-	///                 - P::mutex_lock_type, this type must implement a 
+	///                 - P::mutex_lock_type, this type must implement a
 	///                   constructor that takes a P::mutex_type as a parameter,
 	///                   and it must have the semantics of a scoped mutex lock
 	///                   like std::lock_guard, i.e. locking in the constructor
 	///                   and unlocking in the destructor.
-	///                   
+	///
 	/// @tparam R      Return value type of the slots connected to the signal.
-	/// @tparam A...   Argument types of the slots connected to the signal.  
+	/// @tparam A...   Argument types of the slots connected to the signal.
 	template <class P, class R, class... A >
 	class signal_type<P,R(A...)>
 	{
@@ -337,7 +337,7 @@ namespace nod {
 				// If we are unlucky, some of the connected slots
 				// might be in the process of disconnecting from other threads.
 				// If this happens, we are risking to destruct the disconnector
-				// object managed by our shared pointer before they are done 
+				// object managed by our shared pointer before they are done
 				// disconnecting. This would be bad. To solve this problem, we
 				// discard the shared pointer (that is pointing to the disconnector
 				// object within our own instance), but keep a weak pointer to that
@@ -375,13 +375,13 @@ namespace nod {
 				}
 				return connection{ _shared_disconnector, index };
 			}
-	
+
 			/// Function call operator.
 			///
 			/// Calling this is how the signal is triggered and the
 			/// connected slots are called.
 			///
-			/// @note The slots will be called in the order they were 
+			/// @note The slots will be called in the order they were
 			///       connected to the signal.
 			///
 			/// @param args   Arguments that will be propagated to the
@@ -404,25 +404,25 @@ namespace nod {
 			/// The algorithm used to accumulate slot return values is similar
 			/// to `std::accumulate`. A given binary function is called for
 			/// each return value with the parameters consisting of the
-			/// return value of the accumulator function applied to the 
+			/// return value of the accumulator function applied to the
 			/// previous slots return value, and the current slots return value.
 			/// A inital value must be provided for the first slot return type.
-			/// 
+			///
 			/// @note This can only be used on signals that have slots with
 			///       non-void return types, since we can't accumulate void
 			///       values.
-			///       
+			///
 			/// @tparam T      The type of the initial value given to the accumulator.
 			/// @tparam F      The accumulator function type.
 			/// @param init    Initial value given to the accumulator.
 			/// @param op      Binary operator function object to apply by the accumulator.
-			///                The signature of the funciton should be 
+			///                The signature of the funciton should be
 			///                equivalent of the following:
 			///                  `R func( T1 const& a, T2 const& b )`
 			///                 - The signature does not need to have `const&`.
 			///                 - The initial value, type `T`, must be implicitly
 			///                   convertible to `R`
-			///                 - The return type `R` must be implicitly convertible 
+			///                 - The return type `R` must be implicitly convertible
 			///                   to type `T1`.
 			///                 - The type `R` must be `CopyAssignable`.
 			///                 - The type `S::slot_type::result_type` (return type of
@@ -439,7 +439,7 @@ namespace nod {
 			/// the slot return values into a container.
 			///
 			/// @tparam C     The type of container. This type must be
-			///               `DefaultConstructible`, and usable with 
+			///               `DefaultConstructible`, and usable with
 			///               `std::back_insert_iterator`. Additionally it
 			///               must be either copyable or moveable.
 			/// @param args   The arguments to propagate to the slots.
@@ -484,17 +484,17 @@ namespace nod {
 			/// @param index   The slot index of the slot that should
 			///                be disconnected.
 			void disconnect( std::size_t index ) {
-				mutex_lock_type lock( _mutex );				
-				assert( _slots.size() > index );				
+				mutex_lock_type lock( _mutex );
+				assert( _slots.size() > index );
 				_slots[ index ] = slot_type{};
 				while( _slots.size()>0 && !_slots.back() ) {
 					_slots.pop_back();
 				}
 			}
-			
+
 			/// Implementation of the shared disconnection state
 			/// used by all connection created by signal instances.
-			/// 
+			///
 			/// This inherits the @ref detail::disconnector interface
 			/// for type erasure.
 			struct disconnector :
@@ -534,7 +534,7 @@ namespace nod {
 			/// Disconnector operation, used for executing disconnection in a
 			/// type erased manner.
 			disconnector _disconnector;
-			/// Shared pointer to the disconnector. All connection objects has a 
+			/// Shared pointer to the disconnector. All connection objects has a
 			/// weak pointer to this pointer for performing disconnections.
 			std::shared_ptr<detail::disconnector> _shared_disconnector;
 	};
@@ -551,14 +551,14 @@ namespace nod {
 	/// Signal type that is safe to use in multithreaded environments,
 	/// where the signal and slots exists in different threads.
 	/// The multithreaded policy provides mutexes and locks to syncronize
-	/// access to the signals internals. 
+	/// access to the signals internals.
 	///
 	/// This is the reccomended signal type, even for single threaded
 	/// environments.
 	template <class T> using signal = signal_type<multithread_policy, T>;
 
 	/// Signal type that is unsafe in multithreaded environments.
-	/// No syncronizations are provided to the signal_type for accessing 
+	/// No syncronizations are provided to the signal_type for accessing
 	/// the internals.
 	///
 	/// Only use this signal type if you are sure that your environment is
