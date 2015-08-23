@@ -355,6 +355,9 @@ namespace nod {
 
 			/// Type that will be used to store the slots for this signal type.
 			using slot_type = std::function<R(A...)>;
+			/// Type that is used for counting the slots connected to this signal.
+			using size_type = typename std::vector<slot_type>::size_type;
+
 
 			/// Connect a new slot to the signal.
 			///
@@ -455,6 +458,24 @@ namespace nod {
 					}
 				}
 				return container;
+			}
+
+			/// Count the number of slots connected to this signal
+			/// @returns   The number of connected slots
+			size_type slot_count() const {
+				mutex_lock_type lock{ _mutex };
+				return std::count_if( std::begin(_slots), std::end(_slots),
+					[](slot_type const& slot){
+						return slot != nullptr;
+					});
+			}
+
+			/// Determine if the signal is empty, i.e. no slots are connected
+			/// to it.
+			/// @returns   `true` is returned if the signal has no connected
+			///            slots, and `false` otherwise.
+			bool empty() const {
+				return slot_count() == 0;
 			}
 
 		private:
