@@ -2,7 +2,7 @@
 #include <catch.hpp>
 #include <iostream>
 
-namespace 
+namespace
 {
 	// Function to output a endline to stdout
 	void endline() {
@@ -77,17 +77,17 @@ SCENARIO( "Example usage") {
 		// We create a signal
 		nod::signal<void()> signal;
 		// Let's use a scope to control lifetime
-		{ 
+		{
 			// Let's save the connection in a scoped_connection
 			nod::scoped_connection connection =
 				signal.connect([](){
-					std::cout << "This message should only be emitted once!" << std::endl; 
+					std::cout << "This message should only be emitted once!" << std::endl;
 				});
 			// If we trigger the signal, the slot will be called
 			signal();
 		} // Our scoped connection is destructed, and disconnects the slot
 		// Triggering the signal now will not call the slot
-		signal();	
+		signal();
 	}
 	SECTION( "Slot return values (accumulate)" ) {
 		// We create a singal with slots that return a value
@@ -95,7 +95,7 @@ SCENARIO( "Example usage") {
 		// Then we connect some signals
 		signal.connect( std::plus<int>{} );
 		signal.connect( std::multiplies<int>{} );
-		signal.connect( std::minus<int>{} );		
+		signal.connect( std::minus<int>{} );
 		// Let's say we want to calculate the sum of all the slot return values
 		// when triggering the singal with the parameters 10 and 100.
 		// We do this by accumulating the return values with the initial value 0
@@ -104,7 +104,7 @@ SCENARIO( "Example usage") {
 		// Or accumulate by multiplying (this needs 1 as initial value):
 		std::cout << "Product: " << signal.accumulate(1, std::multiplies<int>{})(10,100) << std::endl;
 		// If we instead want to build a vector with all the return values
-		// we can accumulate them this way (start with a empty vector and add each value):			
+		// we can accumulate them this way (start with a empty vector and add each value):
 		auto vec = signal.accumulate( std::vector<int>{}, []( std::vector<int> result, int value ) {
 				result.push_back( value );
 				return result;
@@ -112,7 +112,7 @@ SCENARIO( "Example usage") {
 
 		std::cout << "Vector: ";
 		for( auto const& element : vec ) {
-			std::cout << element << " "; 
+			std::cout << element << " ";
 		}
 		std::cout << std::endl;
 
@@ -134,7 +134,7 @@ SCENARIO( "Example usage") {
 
 		std::cout << "Result: ";
 		for( auto const& element : vec ) {
-			std::cout << element << " "; 
+			std::cout << element << " ";
 		}
 		std::cout << std::endl;
 		REQUIRE( vec == (std::vector<int>{110, 1000, -90}) );

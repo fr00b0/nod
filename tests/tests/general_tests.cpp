@@ -19,8 +19,8 @@ namespace {
 	}
 
 	// std::function<> that outputs "two" to an ostream
-	std::function<void(std::ostream&)> outputTwo = 
-		[]( std::ostream& out ){ 
+	std::function<void(std::ostream&)> outputTwo =
+		[]( std::ostream& out ){
 			output( out, "two" );
 		};
 
@@ -46,7 +46,7 @@ TEST_CASE( "General tests", "[general]" ) {
 
 	SECTION("Connecting lambda") {
 		output_signal signal;
-		signal.connect( 
+		signal.connect(
 			[](std::ostream& out){
 				out << "lambda";
 			});
@@ -54,7 +54,7 @@ TEST_CASE( "General tests", "[general]" ) {
 		signal(ss);
 		REQUIRE( ss.str() == "lambda" );
 	}
-	
+
 	SECTION( "Connecting free function" ) {
 		output_signal signal;
 		signal.connect(outputOne);
