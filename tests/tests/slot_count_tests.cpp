@@ -51,3 +51,21 @@ SCENARIO( "signals can be queried for how many slots are connected to them" ) {
 		}
 	}
 }
+
+SCENARIO( "Slots are able to query their signal for slot count" ) {
+	GIVEN(  "a signal with connected slots" ) {
+		int x = 0;
+		nod::signal<void()> sig;
+		WHEN( "we connect a slot that counts slots of it's own signal" ) {
+			sig.connect(
+				[&](){
+					x += sig.slot_count();
+				});
+			
+			THEN( "Triggering the signal will get the result without a deadlock" ) {
+				sig();
+				REQUIRE( x == 1 );
+			}
+		}
+	}
+}

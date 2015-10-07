@@ -330,7 +330,9 @@ namespace nod {
 			signal_type& operator=( signal_type const& ) = delete;
 
 			/// signals are default constructible
-			signal_type() = default;
+			signal_type() :
+				_slot_count(0)
+			{}
 
 			// Destruct the signal object.
 			~signal_type() {
@@ -376,6 +378,7 @@ namespace nod {
 					_disconnector = disconnector{ this };
 					_shared_disconnector = std::shared_ptr<detail::disconnector>{&_disconnector, detail::no_delete};
 				}
+				++_slot_count;
 				return connection{ _shared_disconnector, index };
 			}
 
@@ -461,11 +464,7 @@ namespace nod {
 			/// Count the number of slots connected to this signal
 			/// @returns   The number of connected slots
 			size_type slot_count() const {
-				mutex_lock_type lock{ _mutex };
-				return std::count_if( std::begin(_slots), std::end(_slots),
-					[](slot_type const& slot){
-						return slot != nullptr;
-					});
+				return _slot_count;
 			}
 
 			/// Determine if the signal is empty, i.e. no slots are connected
@@ -518,6 +517,9 @@ namespace nod {
 			void disconnect( std::size_t index ) {
 				mutex_lock_type lock( _mutex );
 				assert( _slots.size() > index );
+				if( _slots[ index ] != nullptr ) {
+					--_slot_count;
+				}
 				_slots[ index ] = slot_type{};
 				while( _slots.size()>0 && !_slots.back() ) {
 					_slots.pop_back();
@@ -563,6 +565,8 @@ namespace nod {
 			mutable mutex_type _mutex;
 			/// Vector of all connected slots
 			std::vector<slot_type> _slots;
+			/// Number of connected slots
+			size_type _slot_count;
 			/// Disconnector operation, used for executing disconnection in a
 			/// type erased manner.
 			disconnector _disconnector;
