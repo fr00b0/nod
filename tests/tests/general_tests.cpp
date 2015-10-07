@@ -106,4 +106,21 @@ TEST_CASE( "General tests", "[general]" ) {
 		REQUIRE( ss.str() == "A: 12,B: 12,A: 42,B: 42," );
 	}
 
+	SECTION( "Slot's can remove themself from the signal" ) {
+		auto x = 0;
+		nod::signal<void(int)> signal;
+
+		nod::connection c;
+		c = signal.connect(
+			[&]( int value ) {
+				x += value;			
+				c.disconnect();
+			});
+
+		signal(5); // slot disconnects here
+		REQUIRE( x == 5 ); 
+		signal(10); // the slot will not be called
+		REQUIRE( x == 5 );
+	}
+
 }

@@ -330,7 +330,9 @@ namespace nod {
 			signal_type& operator=( signal_type const& ) = delete;
 
 			/// signals are default constructible
-			signal_type() = default;
+			signal_type() :
+				_slot_count(0)
+			{}
 
 			// Destruct the signal object.
 			~signal_type() {
@@ -376,6 +378,7 @@ namespace nod {
 					_disconnector = disconnector{ this };
 					_shared_disconnector = std::shared_ptr<detail::disconnector>{&_disconnector, detail::no_delete};
 				}
+				++_slot_count;
 				return connection{ _shared_disconnector, index };
 			}
 
@@ -390,8 +393,7 @@ namespace nod {
 			/// @param args   Arguments that will be propagated to the
 			///               connected slots when they are called.
 			void operator()( A const&... args ) const {
-				mutex_lock_type lock{ _mutex };
-				for( auto const& slot : _slots ) {
+				for( auto const& slot : copy_slots() ) {
 					if( slot ) {
 						slot( args... );
 					}
@@ -449,10 +451,9 @@ namespace nod {
 			template <class C>
 			C aggregate( A const&... args ) const {
 				static_assert( std::is_same<R,void>::value == false, "Unable to aggregate slot return values with 'void' as return type." );
-				mutex_lock_type lock{ _mutex };
 				C container;
 				auto iterator = std::back_inserter( container );
-				for( auto const& slot : _slots ) {
+				for( auto const& slot : copy_slots() ) {
 					if( slot ) {
 						(*iterator) = slot( args... );
 					}
@@ -463,11 +464,7 @@ namespace nod {
 			/// Count the number of slots connected to this signal
 			/// @returns   The number of connected slots
 			size_type slot_count() const {
-				mutex_lock_type lock{ _mutex };
-				return std::count_if( std::begin(_slots), std::end(_slots),
-					[](slot_type const& slot){
-						return slot != nullptr;
-					});
+				return _slot_count;
 			}
 
 			/// Determine if the signal is empty, i.e. no slots are connected
@@ -487,10 +484,23 @@ namespace nod {
 			/// Type of mutex lock, provided by threading policy
 			using mutex_lock_type = typename thread_policy::mutex_lock_type;
 
+			/// Retrieve a copy of the current slots
+			///
+			/// It's useful and necessary to copy the slots so we don't need
+			/// to hold the lock while calling the slots. If we hold the lock
+			/// we prevent the called slots from modifying the slots vector.
+			/// This simple "double buffering" will allow slots to disconnect
+			/// themself or other slots and connect new slots.
+			std::vector<slot_type> copy_slots() const
+			{
+				mutex_lock_type lock{ _mutex };
+				return _slots;
+			}
+
+			/// Implementation of the signal accumulator function call
 			template <class T, class F>
 			typename signal_accumulator<signal_type, T, F, A...>::result_type trigger_with_accumulator( T value, F& func, A const&... args ) const {
-				mutex_lock_type lock{ _mutex };
-				for( auto const& slot : _slots ) {
+				for( auto const& slot : copy_slots() ) {
 					if( slot ) {
 						value = func( value, slot( args... ) );
 					}
@@ -507,6 +517,9 @@ namespace nod {
 			void disconnect( std::size_t index ) {
 				mutex_lock_type lock( _mutex );
 				assert( _slots.size() > index );
+				if( _slots[ index ] != nullptr ) {
+					--_slot_count;
+				}
 				_slots[ index ] = slot_type{};
 				while( _slots.size()>0 && !_slots.back() ) {
 					_slots.pop_back();
@@ -552,6 +565,8 @@ namespace nod {
 			mutable mutex_type _mutex;
 			/// Vector of all connected slots
 			std::vector<slot_type> _slots;
+			/// Number of connected slots
+			size_type _slot_count;
 			/// Disconnector operation, used for executing disconnection in a
 			/// type erased manner.
 			disconnector _disconnector;
