@@ -73,7 +73,7 @@ namespace nod {
 			///
 			/// If the connection represents a slot that is connected to a signal object, calling
 			/// this method will disconnect the slot from that object. The result of this operation
-			/// is that the slot will stop recieving calls when the signal is invoked.
+			/// is that the slot will stop receiving calls when the signal is invoked.
 			void disconnect();
 
 		private:
@@ -167,7 +167,7 @@ namespace nod {
 			///
 			/// If the connection represents a slot that is connected to a signal object, calling
 			/// this method will disconnect the slot from that object. The result of this operation
-			/// is that the slot will stop recieving calls when the signal is invoked.
+			/// is that the slot will stop receiving calls when the signal is invoked.
 			void disconnect() {
 				_connection.disconnect();
 			}
@@ -196,10 +196,10 @@ namespace nod {
 		}
 	};
 
-	/// Policy for single threaded use of singals.
+	/// Policy for single threaded use of signals.
 	///
 	/// This policy provides dummy implementations for mutex
-	/// and lock types, resulting in that no syncronization
+	/// and lock types, resulting in that no synchronization
 	/// will take place.
 	///
 	/// This policy is used in the `nod::unsafe_signal` type
@@ -227,8 +227,8 @@ namespace nod {
 	/// This acts sort of as a proxy for triggering a signal and
 	/// accumulating the slot return values.
 	///
-	/// This class is not really intended to instansiate by client code.
-	/// Instanses are aquired as return values of the method `accumulate()`
+	/// This class is not really intended to instantiate by client code.
+	/// Instances are aquired as return values of the method `accumulate()`
 	/// called on signals.
 	///
 	/// @tparam S      Type of signal. The signal_accumulator acts
@@ -247,13 +247,13 @@ namespace nod {
 			/// Result type when calling the accumulating function operator.
 			using result_type = typename std::result_of<F(T, typename S::slot_type::result_type)>::type;
 
-			/// Construct a signal_accumulator as a proxy to a given singal
+			/// Construct a signal_accumulator as a proxy to a given signal
 			//
 			/// @param signal   Signal instance.
 			/// @param init     Initial value of the accumulate algorithm.
-			/// @param func     Binary operation funcion object that will be
+			/// @param func     Binary operation function object that will be
 			///                 applied to all slot return values.
-			///                 The signature of the funciton should be
+			///                 The signature of the function should be
 			///                 equivalent of the following:
 			///                   `R func( T1 const& a, T2 const& b )`
 			///                  - The signature does not need to have `const&`.
@@ -311,7 +311,7 @@ namespace nod {
 	/// @tparam P      Threading policy for the signal.
 	///                A threading policy must provide two type definitions:
 	///                 - P::mutex_type, this type will be used as a mutex
-	///                   in the singal_type class template.
+	///                   in the signal_type class template.
 	///                 - P::mutex_lock_type, this type must implement a
 	///                   constructor that takes a P::mutex_type as a parameter,
 	///                   and it must have the semantics of a scoped mutex lock
@@ -366,7 +366,7 @@ namespace nod {
 			/// The connected slot will be called every time the signal
 			/// is triggered.
 			/// @param slot   The slot to connect. This must be a callable with
-			///               the same signature as the singal itself.
+			///               the same signature as the signal itself.
 			/// @return       A connection object is returned, and can be used to
 			///               disconnect the slot.
 			template <class T>
@@ -411,7 +411,7 @@ namespace nod {
 			/// each return value with the parameters consisting of the
 			/// return value of the accumulator function applied to the
 			/// previous slots return value, and the current slots return value.
-			/// A inital value must be provided for the first slot return type.
+			/// A initial value must be provided for the first slot return type.
 			///
 			/// @note This can only be used on signals that have slots with
 			///       non-void return types, since we can't accumulate void
@@ -421,7 +421,7 @@ namespace nod {
 			/// @tparam F      The accumulator function type.
 			/// @param init    Initial value given to the accumulator.
 			/// @param op      Binary operator function object to apply by the accumulator.
-			///                The signature of the funciton should be
+			///                The signature of the function should be
 			///                equivalent of the following:
 			///                  `R func( T1 const& a, T2 const& b )`
 			///                 - The signature does not need to have `const&`.
@@ -561,7 +561,7 @@ namespace nod {
 				signal_type<P,R(A...)>* _ptr;
 			};
 
-			/// Mutex to syncronize access to the slot vector
+			/// Mutex to synchronize access to the slot vector
 			mutable mutex_type _mutex;
 			/// Vector of all connected slots
 			std::vector<slot_type> _slots;
@@ -586,15 +586,15 @@ namespace nod {
 
 	/// Signal type that is safe to use in multithreaded environments,
 	/// where the signal and slots exists in different threads.
-	/// The multithreaded policy provides mutexes and locks to syncronize
+	/// The multithreaded policy provides mutexes and locks to synchronize
 	/// access to the signals internals.
 	///
-	/// This is the reccomended signal type, even for single threaded
+	/// This is the recommended signal type, even for single threaded
 	/// environments.
 	template <class T> using signal = signal_type<multithread_policy, T>;
 
 	/// Signal type that is unsafe in multithreaded environments.
-	/// No syncronizations are provided to the signal_type for accessing
+	/// No synchronizations are provided to the signal_type for accessing
 	/// the internals.
 	///
 	/// Only use this signal type if you are sure that your environment is
