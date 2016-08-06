@@ -5,7 +5,7 @@ language: cpp
 matrix:
   include:
     - compiler: gcc
-      env: COMPILER=gcc
+      env: COMPILER=g++
     - compiler: gcc
       addons:
         apt:
