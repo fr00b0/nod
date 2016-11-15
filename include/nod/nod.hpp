@@ -465,6 +465,7 @@ namespace nod {
 				mutex_lock_type lock{ _mutex };
 				_slots.clear();
 				_slot_count = 0;
+				invalidate_disconnector();
 			}
 
 		private:
