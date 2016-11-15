@@ -336,23 +336,7 @@ namespace nod {
 
 			// Destruct the signal object.
 			~signal_type() {
-				// If we are unlucky, some of the connected slots
-				// might be in the process of disconnecting from other threads.
-				// If this happens, we are risking to destruct the disconnector
-				// object managed by our shared pointer before they are done
-				// disconnecting. This would be bad. To solve this problem, we
-				// discard the shared pointer (that is pointing to the disconnector
-				// object within our own instance), but keep a weak pointer to that
-				// instance. We then stall the destruction until all other weak
-				// pointers have released their "lock" (indicated by the fact that
-				// we will get a nullptr when locking our weak pointer).
-				std::weak_ptr<detail::disconnector> weak{_shared_disconnector};
-				_shared_disconnector.reset();
-				while( weak.lock() != nullptr )	{
-					// we just yield here, allowing the OS to reschedule. We do
-					// this until all threads has released the disconnector object.
-					thread_policy::yield_thread();
-				}
+				invalidate_disconnector();
 			}
 
 			/// Type that will be used to store the slots for this signal type.
@@ -481,6 +465,7 @@ namespace nod {
 				mutex_lock_type lock{ _mutex };
 				_slots.clear();
 				_slot_count = 0;
+				invalidate_disconnector();
 			}
 
 		private:
@@ -491,6 +476,32 @@ namespace nod {
 			using mutex_type = typename thread_policy::mutex_type;
 			/// Type of mutex lock, provided by threading policy
 			using mutex_lock_type = typename thread_policy::mutex_lock_type;
+
+			/// Invalidate the internal disconnector object in a way
+			/// that is safe according to the current thread policy.
+			///
+			/// This will effectively make all current connection objects to
+			/// to this signal incapable of disconnecting, since they keep a
+			/// weak pointer to the shared disconnector object.
+			void invalidate_disconnector() {
+				// If we are unlucky, some of the connected slots
+				// might be in the process of disconnecting from other threads.
+				// If this happens, we are risking to destruct the disconnector
+				// object managed by our shared pointer before they are done
+				// disconnecting. This would be bad. To solve this problem, we
+				// discard the shared pointer (that is pointing to the disconnector
+				// object within our own instance), but keep a weak pointer to that
+				// instance. We then stall the destruction until all other weak
+				// pointers have released their "lock" (indicated by the fact that
+				// we will get a nullptr when locking our weak pointer).
+				std::weak_ptr<detail::disconnector> weak{_shared_disconnector};
+				_shared_disconnector.reset();
+				while( weak.lock() != nullptr )	{
+					// we just yield here, allowing the OS to reschedule. We do
+					// this until all threads has released the disconnector object.
+					thread_policy::yield_thread();
+				}
+			}
 
 			/// Retrieve a copy of the current slots
 			///
