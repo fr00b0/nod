@@ -475,6 +475,14 @@ namespace nod {
 				return slot_count() == 0;
 			}
 
+			/// Disconnects all slots
+			/// @note This operation invalidates all scoped_connection objects
+			void disconnect_all_slots() {
+				mutex_lock_type lock{ _mutex };
+				_slots.clear();
+				_slot_count = 0;
+			}
+
 		private:
 			template<class, class, class, class...> friend class signal_accumulator;
 			/// Thread policy currently in use
