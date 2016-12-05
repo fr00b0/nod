@@ -118,6 +118,13 @@ namespace nod {
 				_connection( std::move(other._connection) )
 			{}
 
+			/// Move assign operator.
+			/// @param other   The instance to move from.
+			scoped_connection& operator=( scoped_connection&& other ) {
+				_connection = std::move( other._connection );
+				return *this;
+			}
+
 			/// Construct a scoped connection from a connection object
 			/// @param connection   The connection object to manage
 			scoped_connection( connection&& c ) :
