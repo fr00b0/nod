@@ -121,7 +121,7 @@ SCENARIO( "Scoped connection objects are default constructible" ) {
 	}
 }
 
-SCENARIO( "Scoped connection objects are move constructible" ) {
+SCENARIO( "Scoped connection objects are move assignable" ) {
 	GIVEN( "a signal with a connected slot, managed by a scoped connection" ) {
 		nod::signal<void()> signal;
 		std::ostringstream ss;
