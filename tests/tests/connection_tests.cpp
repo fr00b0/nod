@@ -125,8 +125,8 @@ SCENARIO( "Scoped connection will disconnect when destroyed" ) {
 	GIVEN( "A signal" ) {
 		std::ostringstream ss;
 		nod::signal<void()> signal;
-		WHEN( "A slot get's connected and managed by a scoped connection" ) {
-			auto connection = test::make_unique<nod::scoped_connection>( signal.connect([&](){ ss << "singaled!"; }) );
+		WHEN( "A slot gets connected and managed by a scoped connection" ) {
+			auto connection = test::make_unique<nod::scoped_connection>( signal.connect([&](){ ss << "signaled!"; }) );
 			THEN( "the connection is considered connected" ) {
 				REQUIRE( connection->connected() == true );
 			}
