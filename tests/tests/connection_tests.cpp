@@ -113,6 +113,7 @@ SCENARIO( "Signals will disconnect all slots when destroyed" ) {
 }
 
 SCENARIO( "Scoped connection objects are default constructible" ) {
+	REQUIRE( std::is_default_constructible<nod::scoped_connection>::value == true );
 	GIVEN( "a default scoped constructed connection" ) {
 		nod::scoped_connection scoped;
 		THEN( "the scoped connection will not be considered connected" ) {
@@ -121,7 +122,31 @@ SCENARIO( "Scoped connection objects are default constructible" ) {
 	}
 }
 
+SCENARIO( "Scoped connection objects are move constructible" ) {
+	REQUIRE( std::is_move_constructible<nod::scoped_connection>::value == true );
+	GIVEN( "a signal with a slot managed by a scoped connection" ) {
+		nod::signal<void()> signal;
+		nod::scoped_connection scoped = signal.connect([](){});
+		WHEN( "we try to move construct a scoped connection from the existing scoped connection" ) {
+			nod::scoped_connection connection{ std::move(scoped) };
+			THEN( "the new scoped connection is connected, but we still only have one slot connected" ) {
+				REQUIRE( connection.connected() == true );
+				REQUIRE( signal.slot_count() == 1 );
+			}
+		}
+	}
+}
+
+SCENARIO( "Scoped connection objects are not copy constructible" ) {
+	REQUIRE( std::is_copy_constructible<nod::scoped_connection>::value == false );
+}
+
+SCENARIO( "Scoped connection objects are not copy assignable" ) {
+	REQUIRE( std::is_copy_assignable<nod::scoped_connection>::value == false );
+}
+
 SCENARIO( "Scoped connection objects are move assignable" ) {
+	REQUIRE( std::is_move_assignable<nod::scoped_connection>::value == true );
 	GIVEN( "a signal with a connected slot, managed by a scoped connection" ) {
 		nod::signal<void()> signal;
 		std::ostringstream ss;
