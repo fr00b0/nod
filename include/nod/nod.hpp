@@ -121,7 +121,7 @@ namespace nod {
 			/// Move assign operator.
 			/// @param other   The instance to move from.
 			scoped_connection& operator=( scoped_connection&& other ) {
-				reset( std::forward<connection>( other._connection ) );
+				reset( std::move( other._connection ) );
 				return *this;
 			}
 
