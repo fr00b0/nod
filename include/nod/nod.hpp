@@ -290,8 +290,8 @@ namespace nod {
 			///
 			/// @param args   Arguments to propagate to the slots of the
 			///               underlying when triggering the signal.
-			result_type operator()( A&&... args ) const {
-				return _signal.trigger_with_accumulator( _init, _func, std::forward<A>(args)... );
+			result_type operator()( A const& ... args ) const {
+				return _signal.trigger_with_accumulator( _init, _func, args... );
 			}
 
 		private:
