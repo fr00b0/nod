@@ -26,7 +26,8 @@ solution "nod_tests"
 	configuration { "debug" }
 		targetdir        ( "bin/" .. action .. "/debug" )
 		defines          { "_DEBUG", "DEBUG" }
-		flags            { "Symbols", "Unicode" }
+		symbols          ( "On" )
+		characterset     ( "Unicode" )
 		libdirs          { "lib/" .. action .. "/debug" }
 
 	-- Release configuration
@@ -34,7 +35,7 @@ solution "nod_tests"
 		targetdir        ( "bin/" .. action .. "/release" )
 		optimize         ( "Full" )
 		defines          { "NDEBUG" }
-		flags            { "Unicode" }
+		characterset     ( "Unicode" )
 		libdirs          { "lib/" .. action .. "/release" }
 
 -- The test project definition
