@@ -3,7 +3,7 @@
 #include <nod/nod.hpp>
 
 #include <iostream>
-#include <strstream>
+#include <sstream>
 
 SCENARIO( "Connection objects are forced disconnected when disconnecting all slots from a signal" ) {
 	GIVEN("A signal") {

@@ -2,6 +2,7 @@
 #include <nod/nod.hpp>
 #include <catch.hpp>
 #include <numeric>
+#include <string>
 
 SCENARIO( "It's possible to accumulate the return values of slots" ) {
 	GIVEN( "a signal with three slots that return a double" ) {
@@ -41,4 +42,20 @@ SCENARIO( "It's possible to aggregate the return values of slots into a containe
 			}
 		}
 	}
+}
+
+TEST_CASE("rvalue/lvalue tests using accumulate (issue #15") {
+	nod::signal<int(std::shared_ptr<std::string>)> signal;
+	signal.connect([](std::shared_ptr<std::string> str) {
+		return str==nullptr ? 0 : str->size();
+	});
+	signal.connect([](std::shared_ptr<std::string>&& str) {
+		return str==nullptr ? 0 : str->size();
+	});
+	signal.connect([](std::shared_ptr<std::string> const& str) {
+		return str==nullptr ? 0 : str->size();
+	});
+	auto accumulator = signal.accumulate(0, std::plus<int>{});
+	auto ptr = std::make_shared<std::string>("test");
+	REQUIRE( 12 == accumulator(ptr) );
 }
