@@ -122,5 +122,4 @@ TEST_CASE( "General tests", "[general]" ) {
 		signal(10); // the slot will not be called
 		REQUIRE( x == 5 );
 	}
-
 }
