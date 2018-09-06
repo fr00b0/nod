@@ -195,11 +195,19 @@ namespace nod {
 	struct multithread_policy
 	{
 		using mutex_type = std::mutex;
-		using mutex_lock_type = std::lock_guard<mutex_type>;
+		using mutex_lock_type = std::unique_lock<mutex_type>;
 		/// Function that yields the current thread, allowing
 		/// the OS to reschedule.
 		static void yield_thread() {
 			std::this_thread::yield();
+		}
+		/// Function that defers a lock to a lock function that prevents deadlock
+		static mutex_lock_type defer_lock(mutex_type & m){
+			return mutex_lock_type{m, std::defer_lock};
+		}
+		/// Function that locks two mutexes and prevents deadlock
+		static void lock(mutex_lock_type & a,mutex_lock_type & b) {
+			std::lock(a,b);
 		}
 	};
 
@@ -226,6 +234,15 @@ namespace nod {
 		/// Dummy implementation of thread yielding, that
 		/// doesn't do any actual yielding.
 		static void yield_thread() {
+		}
+		/// Dummy implemention of defer_lock that doesn't
+		/// do anything
+		static mutex_lock_type defer_lock(mutex_type &m){
+			return mutex_lock_type{m};
+		}
+		/// Dummy implemention of lock that doesn't
+		/// do anything
+		static void lock(mutex_lock_type &,mutex_lock_type &) {
 		}
 	};
 
@@ -335,6 +352,38 @@ namespace nod {
 			signal_type( signal_type const& ) = delete;
 			/// signals are not copy assignable
 			signal_type& operator=( signal_type const& ) = delete;
+			/// signals are move constructible
+			signal_type(signal_type&& other)
+			{
+				mutex_lock_type lock{other._mutex};
+				_slot_count = std::move(other._slot_count);
+				_slots = std::move(other._slots);
+				if(other._shared_disconnector != nullptr)
+				{
+					_disconnector = disconnector{ this };
+					_shared_disconnector = std::move(other._shared_disconnector);
+					// replace the disconnector with our own disconnector
+					*static_cast<disconnector*>(_shared_disconnector.get()) = _disconnector;
+				}
+			}
+			/// signals are move assignable
+			signal_type& operator=(signal_type&& other)
+			{
+				auto lock = thread_policy::defer_lock(_mutex);
+				auto other_lock = thread_policy::defer_lock(other._mutex);
+				thread_policy::lock(lock,other_lock);
+
+				_slot_count = std::move(other._slot_count);
+				_slots = std::move(other._slots);
+				if(other._shared_disconnector != nullptr)
+				{
+					_disconnector = disconnector{ this };
+					_shared_disconnector = std::move(other._shared_disconnector);
+					// replace the disconnector with our own disconnector
+					*static_cast<disconnector*>(_shared_disconnector.get()) = _disconnector;
+				}
+				return *this;
+			}
 
 			/// signals are default constructible
 			signal_type() :
