@@ -66,3 +66,31 @@ TEST_CASE( "signals can be move assigned", "[move_tests]" ) {
 		REQUIRE( ss.str() == "" );
 	}
 }
+
+TEST_CASE("Move assigning signals to with state", "[move_tests") {
+    using output_signal = nod::signal<void(std::ostream&)>;
+    output_signal signal_1;
+    auto connection_1 = signal_1.connect(
+        [](std::ostream& out){
+        out << "1";
+    });
+    output_signal signal_2;
+    auto connection_2 = signal_2.connect(
+        [](std::ostream& out){
+        out << "2";
+    });
+
+    signal_1 = std::move(signal_2);
+
+    SECTION( "The moved-to instance has disconnected it's original connection" ) {
+        REQUIRE(connection_1.connected() == false);
+    }
+    SECTION( "The moved-from instance has moved not disconnected its original connection, it is now owned by the moved-to instance" ) {
+        REQUIRE(connection_2.connected() == true);
+    }
+    SECTION( "Triggering the moved-to signal has expected output" ) {
+        std::stringstream ss;
+        signal_1(ss);
+        REQUIRE(ss.str() == "2");
+    }
+}
