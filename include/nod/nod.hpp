@@ -391,7 +391,7 @@ namespace nod {
 			{}
 
 			// Destruct the signal object.
-			~signal_type() {
+			~signal_type() noexcept {
 				invalidate_disconnector();
 			}
 
