@@ -47,9 +47,9 @@ TEST_CASE("Concurrent disconnection does not deadlock", "[thread_test]")
             finished++;
         });
 
-        std::chrono::steady_clock::time_point startPoint = std::chrono::steady_clock::now();
+        std::chrono::steady_clock::time_point const startPoint = std::chrono::steady_clock::now();
 
-        auto waitTimeExpired = [startPoint = std::chrono::steady_clock::now()] {
+        auto waitTimeExpired = [&startPoint] {
             return (std::chrono::steady_clock::now() - startPoint) > std::chrono::seconds(1);
         };
 
