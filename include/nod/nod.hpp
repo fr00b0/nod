@@ -11,7 +11,7 @@
 #include <type_traits>  // std::is_same
 #include <iterator>     // std::back_inserter
 
-#include "noddefs.h"
+#include "noddefs.hpp"
 
 namespace nod {
 	// implementational details
