@@ -17,10 +17,8 @@ namespace nod {
 		/// Interface for type erasure when disconnecting slots
 		struct disconnector {
 			virtual void operator()( std::size_t index ) const = 0;
+			virtual ~disconnector() {}
 		};
-		/// Deleter that doesn't delete
-		inline void no_delete(disconnector*){
-		}
 	} // namespace detail
 
 	/// Base template for the signal class
@@ -364,10 +362,9 @@ namespace nod {
 				_slots = std::move(other._slots);
 				if(other._shared_disconnector != nullptr)
 				{
-					_disconnector = disconnector{ this };
+					// get ownership for disconnector and update back-reference
 					_shared_disconnector = std::move(other._shared_disconnector);
-					// replace the disconnector with our own disconnector
-					*static_cast<disconnector*>(_shared_disconnector.get()) = _disconnector;
+					static_cast<disconnector*>(_shared_disconnector.get())->_ptr = this;
 				}
 			}
 			/// signals are move assignable
@@ -381,10 +378,9 @@ namespace nod {
 				_slots = std::move(other._slots);
 				if(other._shared_disconnector != nullptr)
 				{
-					_disconnector = disconnector{ this };
+					// get ownership for disconnector and update back-reference
 					_shared_disconnector = std::move(other._shared_disconnector);
-					// replace the disconnector with our own disconnector
-					*static_cast<disconnector*>(_shared_disconnector.get()) = _disconnector;
+					static_cast<disconnector*>(_shared_disconnector.get())->_ptr = this;
 				}
 				return *this;
 			}
@@ -419,8 +415,7 @@ namespace nod {
 				_slots.push_back( std::forward<T>(slot) );
 				std::size_t index = _slots.size()-1;
 				if( _shared_disconnector == nullptr ) {
-					_disconnector = disconnector{ this };
-					_shared_disconnector = std::shared_ptr<detail::disconnector>{&_disconnector, detail::no_delete};
+					_shared_disconnector = std::make_shared<disconnector>(this);
 				}
 				++_slot_count;
 				return connection{ _shared_disconnector, index };
@@ -646,11 +641,9 @@ namespace nod {
 			std::vector<slot_type> _slots;
 			/// Number of connected slots
 			size_type _slot_count;
-			/// Disconnector operation, used for executing disconnection in a
-			/// type erased manner.
-			disconnector _disconnector;
-			/// Shared pointer to the disconnector. All connection objects has a
-			/// weak pointer to this pointer for performing disconnections.
+			/// Disconnector operation, used for executing disconnection. All
+			/// connection objects have a weak pointer to this shared pointer
+			/// for performing disconnections.
 			std::shared_ptr<detail::disconnector> _shared_disconnector;
 	};
 
